@@ -140,6 +140,7 @@ export default function JobCard({ jobData }: JobCardProps) {
       </CardHeader>
       <CardContent>
         <div className="flex flex-col space-y-2 mb-4">
+          <h1 className="font-bold text-2xl">{job.title}</h1>
           <div className="flex items-center space-x-2">
             <FaMapMarkerAlt className="text-purple-600 w-5 h-5" />
             <span>{job.location}</span>

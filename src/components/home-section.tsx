@@ -40,7 +40,7 @@ export function HomeSection() {
     { icon: <FaBriefcase className="w-6 h-6" />, title: "Business" },
     { icon: <FaStethoscope className="w-6 h-6" />, title: "Healthcare" },
     { icon: <FaGraduationCap className="w-6 h-6" />, title: "Education" },
-    { icon: <FaLaptopCode className="w-6 h-6" />, title: "Design" },
+    { icon: <FaLaptopCode className="w-6 h-6" />, title: "Fasion Design" },
     { icon: <FaBriefcase className="w-6 h-6" />, title: "Finance" },
     { icon: <FaStethoscope className="w-6 h-6" />, title: "Engineering" },
     { icon: <FaGraduationCap className="w-6 h-6" />, title: "Sales" },

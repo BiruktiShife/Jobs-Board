@@ -16,7 +16,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Image from "next/image";
-// import { useSession } from "next-auth/react";
 
 interface Job {
   title: string;
@@ -117,6 +116,16 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
     });
     setPreview(null);
   };
+  const industryOptions = [
+    "Programming",
+    "Business",
+    "Healthcare",
+    "Education",
+    "Fashion Design",
+    "Finance",
+    "Sales",
+    "Engineering",
+  ];
 
   return (
     <div className="bg-gradient-to-br from-gray-50 to-green-300">
@@ -168,12 +177,23 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
               <Label htmlFor="area" className="ml-2 mb-1">
                 Industry Area
               </Label>
-              <Input
-                id="area"
-                name="area"
+              <Select
+                onValueChange={(value) => setJob({ ...job, area: value })}
                 value={job.area}
-                onChange={handleInput}
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an industry" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {industryOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="mb-4">
@@ -327,7 +347,6 @@ interface Job {
 }
 
 export default function PostJob() {
-  // const { data: session, status } = useSession();
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>(
     []
   );
