@@ -5,25 +5,38 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Loader2, Upload } from "lucide-react";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 export default function ManageProfile() {
   const { data: session } = useSession();
   const [name, setName] = useState("");
-  const [, setProfileImage] = useState<string>(""); // URL from DB
+  const [profileImage, setProfileImage] = useState<string>(""); // URL from DB
   const [file, setFile] = useState<File | null>(null); // Local file
   const [loading, setLoading] = useState(true);
   const [preview, setPreview] = useState<string | null>(null); // Image preview
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const response = await fetch("/api/user/profile");
-      if (response.ok) {
+      try {
+        const response = await fetch("/api/user/profile");
+        if (!response.ok) throw new Error("Failed to fetch profile");
         const data = await response.json();
-        setName(data.name);
+        setName(data.name || "");
         setProfileImage(data.profileImage || "");
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+        setError("Failed to load profile data");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchProfile();
   }, []);
@@ -32,9 +45,10 @@ export default function ManageProfile() {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
+      setError(null); // Clear any previous errors
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreview(reader.result as string); // Preview the image
+        setPreview(reader.result as string);
       };
       reader.readAsDataURL(selectedFile);
     }
@@ -42,6 +56,10 @@ export default function ManageProfile() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+    setSuccess(null);
+
     const formData = new FormData();
     if (name) formData.append("name", name);
     if (file) formData.append("profileImage", file);
@@ -56,62 +74,134 @@ export default function ManageProfile() {
         setProfileImage(updatedUser.profileImage || "");
         setFile(null);
         setPreview(null);
-        alert("Profile updated successfully");
+        setSuccess("Profile updated successfully!");
       } else {
-        alert("Failed to update profile");
+        const errorData = await response.json();
+        setError(errorData.message || "Failed to update profile");
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert("An error occurred");
+      setError("An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (!session) return <p>Please log in</p>;
-  if (loading) return <p>Loading...</p>;
+  if (!session) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-lg text-gray-600">
+          Please log in to manage your profile.
+        </p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+      </div>
+    );
+  }
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Manage Profile</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium">
-            Name
-          </label>
-          <Input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-1"
-          />
-        </div>
-        <div>
-          <label htmlFor="profileImage" className="block text-sm font-medium">
-            Profile Image
-          </label>
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 sm:p-8">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="flex flex-col items-center text-white rounded-t-lg">
+          <CardTitle className="text-2xl font-bold text-black">
+            Edit Profile
+          </CardTitle>
+          <p className="text-sm text-black">Update your personal information</p>
+        </CardHeader>
+        <CardContent className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="flex flex-col items-center">
+              <div className="relative">
+                {preview || profileImage ? (
+                  <Image
+                    src={preview || profileImage}
+                    alt="Profile Preview"
+                    width={120}
+                    height={120}
+                    className="rounded-full object-cover border-4 border-white shadow-md"
+                  />
+                ) : (
+                  <Avatar className="w-28 h-28">
+                    <AvatarFallback className="bg-green-200 text-green-800 text-2xl">
+                      {name ? name.charAt(0).toUpperCase() : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+                <label
+                  htmlFor="profileImage"
+                  className="absolute bottom-0 right-0 bg-green-600 p-2 rounded-full cursor-pointer hover:bg-green-700 transition-colors"
+                >
+                  <Upload className="w-5 h-5 text-white" />
+                  <Input
+                    id="profileImage"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                Click to upload a new profile image
+              </p>
+            </div>
 
-          {preview && (
-            <div className="mt-2">
-              <Image
-                src={preview}
-                alt="Preview"
-                width={100}
-                height={100}
-                className="rounded-full"
+            {/* Name Field */}
+            <div>
+              <Label
+                htmlFor="name"
+                className="text-sm font-medium text-gray-700"
+              >
+                Full Name
+              </Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your name"
+                className="mt-1 border-gray-300 focus:border-green-500 focus:ring-green-500"
               />
             </div>
-          )}
-          <Input
-            id="profileImage"
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="mt-1"
-          />
-        </div>
-        <Button type="submit" className="bg-green-600 hover:bg-green-700">
-          Save Changes
-        </Button>
-      </form>
+
+            {/* Feedback Messages */}
+            {error && (
+              <p className="text-sm text-red-600 bg-red-50 p-2 rounded-md">
+                {error}
+              </p>
+            )}
+            {success && (
+              <p className="text-sm text-green-600 bg-green-50 p-2 rounded-md">
+                {success}
+              </p>
+            )}
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className={cn(
+                "w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition-colors",
+                isSubmitting && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              {isSubmitting ? (
+                <span className="flex items-center">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  Saving...
+                </span>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

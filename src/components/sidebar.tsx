@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import {
-  FiLogOut,
-  FiSettings,
   FiBookmark,
   FiUsers,
   FiBriefcase,
@@ -13,8 +11,6 @@ import {
   FiChevronRight,
 } from "react-icons/fi";
 import Link from "next/link";
-import { signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
 
 interface SidebarProps<T extends string> {
   activeTab: T;
@@ -29,7 +25,6 @@ export function Sidebar<T extends string>({
 }: SidebarProps<T>) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showCollapseButton, setShowCollapseButton] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     const handleResize = () => {
@@ -52,12 +47,9 @@ export function Sidebar<T extends string>({
   }, []);
 
   const tabs =
-    role === "admin" ? ["jobs", "applicants"] : ["jobs", "bookmarks"];
-
-  const handleLogout = async () => {
-    await signOut({ redirect: false }); // Sign out without immediate redirect
-    router.push("/login"); // Manually redirect to login page
-  };
+    role === "admin"
+      ? ["Applied jobs", "applicants"]
+      : ["Applied jobs", "bookmarks"];
 
   return (
     <aside
@@ -127,31 +119,13 @@ export function Sidebar<T extends string>({
           ))}
         </nav>
       </div>
-
-      <div>
-        <Button
-          variant="ghost"
-          className="w-full justify-start mb-2 flex items-center space-x-2 px-2"
-        >
-          {!isCollapsed && <span>Settings</span>}
-          {isCollapsed && <FiSettings />}
-        </Button>
-        <Button
-          variant="ghost"
-          className="w-full justify-start flex items-center space-x-2 px-2"
-          onClick={handleLogout} // Add logout handler
-        >
-          {!isCollapsed && <span>Logout</span>}
-          {isCollapsed && <FiLogOut />}
-        </Button>
-      </div>
     </aside>
   );
 }
 
 function IconForTab({ tab }: { tab: string }) {
   switch (tab) {
-    case "jobs":
+    case "Applied jobs":
       return <FiBriefcase className="w-5 h-5" />;
     case "applicants":
       return <FiUsers className="w-5 h-5" />;

@@ -30,7 +30,9 @@ interface AppliedJob {
 }
 
 export default function JobSeeker() {
-  const [activeTab, setActiveTab] = useState<"jobs" | "bookmarks">("jobs");
+  const [activeTab, setActiveTab] = useState<"Applied jobs" | "bookmarks">(
+    "Applied jobs"
+  );
   const [bookmarkedJobs, setBookmarkedJobs] = useState<Job[]>([]);
   const [appliedJobs, setAppliedJobs] = useState<AppliedJob[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,7 @@ export default function JobSeeker() {
       setError(null);
 
       try {
-        if (activeTab === "jobs" && session?.user.id) {
+        if (activeTab === "Applied jobs" && session?.user.id) {
           const response = await fetch("/api/applications/user");
           if (!response.ok) throw new Error("Failed to fetch applied jobs");
           const data = await response.json();
@@ -72,7 +74,7 @@ export default function JobSeeker() {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar<"jobs" | "bookmarks">
+      <Sidebar<"Applied jobs" | "bookmarks">
         activeTab={activeTab}
         onTabChange={setActiveTab}
         role="candidate"
@@ -83,7 +85,7 @@ export default function JobSeeker() {
           <Profile email="candidate@example.com" />{" "}
         </span>
 
-        {activeTab === "jobs" && (
+        {activeTab === "Applied jobs" && (
           <div>
             {loading && <p>Loading applied jobs...</p>}
             {error && <p className="text-red-500">{error}</p>}

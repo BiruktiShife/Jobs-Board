@@ -187,9 +187,7 @@ export function HomeSection() {
       </section>
 
       <section className="container mx-auto px-6 py-12">
-        <h2 className="text-3xl font-bold text-center mb-8">
-          Jobs by Category
-        </h2>
+        <h2 className="text-3xl font-bold text-center mb-8">Jobs</h2>
         {!loading && !error && filteredJobs.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filteredJobs.map((job) => (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FilterIcon, SearchIcon } from "lucide-react";
+import { Profile } from "@/components/header";
 
 interface Job {
   id: string;
@@ -79,7 +80,7 @@ export default function CompanyDashboard() {
       return;
     }
 
-    console.log("Session User ID:", session.user.id); // Debug
+    console.log("Session User ID:", session.user.id);
 
     const fetchJobs = async () => {
       try {
@@ -88,7 +89,7 @@ export default function CompanyDashboard() {
           throw new Error(`Failed to fetch jobs: ${response.statusText}`);
         }
         const data = await response.json();
-        console.log("API Response:", data); // Debug: Log full response
+        console.log("API Response:", data);
 
         setCompanyName(data.companyName || "Unknown Company");
         const validJobs = Array.isArray(data.jobs)
@@ -157,10 +158,7 @@ export default function CompanyDashboard() {
       </div>
     );
   }
-  const handleLogout = async () => {
-    await signOut({ redirect: false }); // Sign out without immediate redirect
-    router.push("/login"); // Manually redirect to login page
-  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-300 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -176,12 +174,7 @@ export default function CompanyDashboard() {
             >
               Post New Job
             </Button>
-            <Button
-              className="bg-green-600 text-white hover:bg-green-700"
-              onClick={handleLogout} // Add logout handler
-            >
-              Logout
-            </Button>
+            <Profile email="candidate@example.com" />
           </div>
         </header>
 
