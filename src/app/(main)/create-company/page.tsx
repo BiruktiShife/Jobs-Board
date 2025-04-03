@@ -14,9 +14,9 @@ import Image from "next/image";
 export default function CreateCompanyPage() {
   const { data: session, status } = useSession();
   const [name, setName] = useState("");
-  const [logoFile, setLogoFile] = useState<File | null>(null); // Store the file
-  const [, setLogo] = useState<string>(""); // Store the logo path (simplified for now)
-  const [logoPreview, setLogoPreview] = useState<string | null>(null); // Preview the image
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [, setLogo] = useState<string>("");
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [about, setAbout] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

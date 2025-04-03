@@ -40,7 +40,7 @@ export function HomeSection() {
     { icon: <FaBriefcase className="w-6 h-6" />, title: "Business" },
     { icon: <FaStethoscope className="w-6 h-6" />, title: "Healthcare" },
     { icon: <FaGraduationCap className="w-6 h-6" />, title: "Education" },
-    { icon: <FaLaptopCode className="w-6 h-6" />, title: "Fasion Design" },
+    { icon: <FaLaptopCode className="w-6 h-6" />, title: "Fashion Design" },
     { icon: <FaBriefcase className="w-6 h-6" />, title: "Finance" },
     { icon: <FaStethoscope className="w-6 h-6" />, title: "Engineering" },
     { icon: <FaGraduationCap className="w-6 h-6" />, title: "Sales" },
@@ -48,7 +48,7 @@ export function HomeSection() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,6 +63,7 @@ export function HomeSection() {
       setCurrentIndex((prev) => prev - 1);
     }
   };
+
   useEffect(() => {
     const fetchJobs = async () => {
       try {
@@ -71,7 +72,7 @@ export function HomeSection() {
           throw new Error("Failed to fetch jobs");
         }
         const data = await response.json();
-        setJobs(data);
+        setFilteredJobs(data);
         setLoading(false);
       } catch (err) {
         console.error(err);
@@ -79,11 +80,34 @@ export function HomeSection() {
         setLoading(false);
       }
     };
-
     fetchJobs();
   }, []);
+
+  const handleCategoryClick = async (category: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch(
+        `/api/jobs/catagory?area=${encodeURIComponent(category)}`
+      );
+      console.log("Response status:", response.status);
+      if (!response.ok) {
+        throw new Error("Failed to fetch jobs for category");
+      }
+      const data = await response.json();
+      console.log("Fetched jobs:", data);
+      setFilteredJobs(data);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error:", err);
+      setError(`Failed to load jobs for ${category}`);
+      setLoading(false);
+    }
+  };
+
   if (loading) return <p>Loading job details...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
+
   return (
     <div className="flex flex-col min-h-screen">
       <section
@@ -96,7 +120,6 @@ export function HomeSection() {
         }}
       >
         <div className="absolute inset-0 bg-white/75 md:bg-gray-100/75"></div>
-
         <div className="w-full md:w-1/2 px-6 text-center md:text-left ml-12 relative z-10">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
             Find Your Dream Job Today!
@@ -117,11 +140,11 @@ export function HomeSection() {
             </div>
           </div>
         </div>
-
         <div className="w-full md:w-1/2 px-6 mt-8 md:mt-0 relative z-10">
           <Image src="/image.png" alt="Sample Image" width={250} height={200} />
         </div>
       </section>
+
       <section className="container mx-auto relative mt-6">
         <h2 className="text-3xl font-bold text-center mb-8">Jobs Category</h2>
         <div className="relative overflow-hidden">
@@ -134,7 +157,6 @@ export function HomeSection() {
           >
             <FaChevronLeft className="w-6 h-6 text-gray-600" />
           </button>
-
           <div
             ref={containerRef}
             className="flex transition-transform duration-300 ease-in-out"
@@ -142,12 +164,14 @@ export function HomeSection() {
           >
             {categories.map((category: Category, index: number) => (
               <div key={index} className="flex-shrink-0 w-1/3 p-2">
-                {" "}
-                <CategoryCard icon={category.icon} title={category.title} />
+                <CategoryCard
+                  icon={category.icon}
+                  title={category.title}
+                  onCategoryClick={handleCategoryClick}
+                />
               </div>
             ))}
           </div>
-
           <button
             onClick={handleNext}
             className={`absolute right-0 top-1/2 transform -translate-y-1/2 bg-white p-1 rounded-full shadow-lg z-10 hover:bg-gray-100 ${
@@ -163,15 +187,17 @@ export function HomeSection() {
       </section>
 
       <section className="container mx-auto px-6 py-12">
-        <h2 className="text-3xl font-bold text-center mb-8">All Jobs</h2>
-        {loading && <p>Loading jobs...</p>}
-        {error && <p className="text-red-500">{error}</p>}
-        {!loading && !error && (
+        <h2 className="text-3xl font-bold text-center mb-8">
+          Jobs by Category
+        </h2>
+        {!loading && !error && filteredJobs.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {jobs.map((job) => (
+            {filteredJobs.map((job) => (
               <JobCard key={job.id} jobData={job} />
             ))}
           </div>
+        ) : (
+          !loading && !error && <p>No jobs found for this category.</p>
         )}
       </section>
     </div>

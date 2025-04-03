@@ -65,8 +65,7 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setJob({ ...job, logo: `/${file.name}` }); // Simplistic for now; consider uploading to a server in production
-
+      setJob({ ...job, logo: `/${file.name}` });
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result as string);

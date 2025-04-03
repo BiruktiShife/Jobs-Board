@@ -21,8 +21,8 @@ interface Job {
   responsibilities: string[];
   requiredSkills: string[];
 }
+
 export default function Dashboard() {
-  const email = "candidate@example.com";
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,26 +31,25 @@ export default function Dashboard() {
     const fetchJobs = async () => {
       try {
         const response = await fetch("/api/jobs");
-        if (!response.ok) {
-          throw new Error("Failed to fetch jobs");
-        }
+        if (!response.ok) throw new Error("Failed to fetch jobs");
         const data = await response.json();
         setJobs(data);
-        setLoading(false);
       } catch (err) {
         console.error(err);
         setError("Failed to load jobs");
+      } finally {
         setLoading(false);
       }
     };
-
     fetchJobs();
   }, []);
+
   if (loading) return <p>Loading job details...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
+
   return (
     <div className="flex flex-col min-h-screen">
-      <nav className="flex items-center justify-between bg-gray-800 shadow-md">
+      <nav className="flex items-center justify-between bg-gray-800 shadow-md py-4">
         <div className="flex items-center gap-0 px-8">
           <Image
             src="/logo.png"
@@ -61,34 +60,26 @@ export default function Dashboard() {
           />
           <span className="text-2xl font-bold text-green-600">JobBoard</span>
         </div>
-
-        <div className="flex space-x-4 border-gray-200 mr-4 gap-4">
+        <div className="flex space-x-4 mr-4 gap-4">
           <Link
             href="/job-seeker"
             className="text-green-500 hover:text-green-400 font-bold"
           >
             Home
           </Link>
-          <Profile email={email} />
+          <Profile email="candidate@example.com" />{" "}
         </div>
       </nav>
-
       <div className="flex flex-col md:flex-row md:space-x-8 p-8">
-        <div className="w-full md:w-2/3">{<HomeSection />}</div>
-
+        <div className="w-full md:w-2/3">
+          <HomeSection />
+        </div>
         <aside className="border-l border-gray-300 pl-6">
-          {" "}
           <h2 className="text-2xl font-bold mb-4">Recommended Jobs</h2>
           <div>
-            {loading && <p>Loading jobs...</p>}
-            {error && <p className="text-red-500">{error}</p>}
-            {!loading && !error && (
-              <div>
-                {jobs.map((job) => (
-                  <JobCard key={job.id} jobData={job} />
-                ))}
-              </div>
-            )}
+            {jobs.map((job) => (
+              <JobCard key={job.id} jobData={job} />
+            ))}
           </div>
         </aside>
       </div>
