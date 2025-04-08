@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { CustomTable } from "@/components/table";
 import { BsPlusCircle } from "react-icons/bs";
-import { FiBriefcase, FiUsers } from "react-icons/fi";
+import { FiBriefcase, FiHome, FiUsers } from "react-icons/fi";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 
@@ -22,35 +22,18 @@ interface Applicant {
   status: string;
 }
 
-const AddButton = ({ onClick }: { onClick: () => void }) => {
-  return (
-    <div className="flex gap-4">
-      <Link href="/create-company">
-        <button
-          className="flex items-center justify-center bg-green-600 text-white font-medium px-4 py-2 rounded-md shadow-md hover:bg-green-700 transition duration-300 fixed top-8 right-48"
-          onClick={onClick}
-        >
-          <BsPlusCircle className="w-6 h-6 mr-2" />
-          Add Company
-        </button>
-      </Link>
-      <Link href="/jobs/job-form">
-        <button
-          className="flex items-center justify-center bg-green-600 text-white font-medium px-4 py-2 rounded-md shadow-md hover:bg-green-700 transition duration-300 fixed top-8 right-8"
-          onClick={onClick}
-        >
-          <BsPlusCircle className="w-6 h-6 mr-2" />
-          Add Job
-        </button>
-      </Link>
-    </div>
-  );
-};
+interface Company {
+  name: string;
+  adminEmail: string;
+}
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<"jobs" | "applicants">("jobs");
+  const [activeTab, setActiveTab] = useState<
+    "jobs" | "applicants" | "companies"
+  >("jobs");
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { data: session, status } = useSession();
@@ -71,9 +54,14 @@ export default function AdminDashboard() {
           if (!response.ok) throw new Error("Failed to fetch applicants");
           const data = await response.json();
           setApplicants(data);
+        } else if (activeTab === "companies") {
+          const response = await fetch("/api/companies/all-for-admin");
+          if (!response.ok) throw new Error("Failed to fetch companies");
+          const data = await response.json();
+          setCompanies(data);
         }
       } catch (err) {
-        console.error(err);
+        console.error("Fetch error:", err);
         setError("Failed to load data");
       } finally {
         setLoading(false);
@@ -93,9 +81,38 @@ export default function AdminDashboard() {
     console.log("Add Job button clicked!");
   };
 
+  const AddButton = ({ onClick }: { onClick: () => void }) => {
+    return (
+      <div className="flex gap-4">
+        {activeTab === "companies" && (
+          <Link href="/create-company">
+            <button
+              className="flex items-center justify-center bg-green-600 text-white font-medium px-4 py-2 rounded-md shadow-md hover:bg-green-700 transition duration-300 fixed top-8 right-8"
+              onClick={onClick}
+            >
+              <BsPlusCircle className="w-6 h-6 mr-2" />
+              Add Company
+            </button>
+          </Link>
+        )}
+        {activeTab === "jobs" && (
+          <Link href="/jobs/job-form">
+            <button
+              className="flex items-center justify-center bg-green-600 text-white font-medium px-4 py-2 rounded-md shadow-md hover:bg-green-700 transition duration-300 fixed top-8 right-8"
+              onClick={onClick}
+            >
+              <BsPlusCircle className="w-6 h-6 mr-2" />
+              Add Job
+            </button>
+          </Link>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="flex min-h-screen relative">
-      <Sidebar<"jobs" | "applicants">
+      <Sidebar<"jobs" | "applicants" | "companies">
         activeTab={activeTab}
         onTabChange={setActiveTab}
         role="admin"
@@ -112,6 +129,12 @@ export default function AdminDashboard() {
             <span className="flex items-center text-green-600 font-bold space-x-2">
               <FiUsers className="w-6 h-6" />
               <span>Applicants</span>
+            </span>
+          )}
+          {activeTab === "companies" && (
+            <span className="flex items-center text-green-600 font-bold space-x-2">
+              <FiHome className="w-6 h-6" />
+              <span>Companies</span>
             </span>
           )}
         </div>
@@ -137,6 +160,15 @@ export default function AdminDashboard() {
                 data={applicants}
                 columns={["Name", "Job", "Status"]}
               />
+            )}
+          </div>
+        )}
+        {activeTab === "companies" && (
+          <div>
+            {loading && <p>Loading companies...</p>}
+            {error && <p className="text-red-500">{error}</p>}
+            {!loading && !error && (
+              <CustomTable data={companies} columns={["Name", "Admin Email"]} />
             )}
           </div>
         )}

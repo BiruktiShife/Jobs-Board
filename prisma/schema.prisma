@@ -68,8 +68,8 @@ model User {
   createdAt     DateTime  @default(now())
   accounts      Account[] 
   sessions      Session[] 
-  bookmarks Bookmark[]
-  applications Application[]
+  bookmarks     Bookmark[]
+  applications  Application[]
 }
 model Account {
   id                String  @id @default(cuid())

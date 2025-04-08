@@ -123,8 +123,8 @@ function CompanyJobForm({ onSubmit }: CompanyJobFormProps) {
 
     setJob({
       title: "",
-      companyId: job.companyId, // Retain companyId
-      logo: job.logo, // Retain logo
+      companyId: job.companyId,
+      logo: job.logo,
       area: "",
       location: "",
       deadline: "",
@@ -139,13 +139,22 @@ function CompanyJobForm({ onSubmit }: CompanyJobFormProps) {
   if (status === "loading" || loading) {
     return <div>Loading...</div>;
   }
-
+  const industryOptions = [
+    "Programming",
+    "Business",
+    "Healthcare",
+    "Education",
+    "Fashion Design",
+    "Finance",
+    "Sales",
+    "Engineering",
+  ];
   return (
     <div className="bg-gradient-to-br from-gray-50 to-green-300">
       <Card className="max-w-5xl mx-auto p-6">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-green-700">
-            Create Job Posting (Company)
+            Create Job Posting
           </CardTitle>
         </CardHeader>
 
@@ -167,12 +176,23 @@ function CompanyJobForm({ onSubmit }: CompanyJobFormProps) {
               <Label htmlFor="area" className="ml-2 mb-1">
                 Industry Area
               </Label>
-              <Input
-                id="area"
-                name="area"
+              <Select
+                onValueChange={(value) => setJob({ ...job, area: value })}
                 value={job.area}
-                onChange={handleInput}
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an industry" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {industryOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="mb-4">
