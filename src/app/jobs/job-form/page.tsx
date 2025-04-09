@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BsPlus } from "react-icons/bs";
+import { BsArrowLeft, BsPlus } from "react-icons/bs";
 import {
   Select,
   SelectContent,
@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Image from "next/image";
+import Link from "next/link";
+import { Loader2 } from "lucide-react";
 
 interface Job {
   title: string;
@@ -130,7 +132,12 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
     <div className="bg-gradient-to-br from-gray-50 to-green-300">
       <Card className="max-w-5xl mx-auto p-6">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-green-700">
+          <CardTitle className="flex items-center text-2xl font-bold text-green-700">
+            <span className="mr-5">
+              <Link href="/dashboard/company">
+                <BsArrowLeft />{" "}
+              </Link>
+            </span>
             Create Job Posting
           </CardTitle>
         </CardHeader>
@@ -389,7 +396,11 @@ export default function PostJob() {
   };
 
   if (loading) {
-    return <div>Loading companies...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+      </div>
+    );
   }
 
   if (companies.length === 0) {

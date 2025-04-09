@@ -6,6 +6,8 @@ import JobCard from "@/utils/jobCard";
 import { Profile } from "@/components/header";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 interface Job {
   id: string;
@@ -26,6 +28,19 @@ export default function Dashboard() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    } else if (
+      status === "authenticated" &&
+      !["ADMIN", "JOB_SEEKER"].includes(session.user?.role)
+    ) {
+      router.push("/unauthorized");
+    }
+  }, [status, session, router]);
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -41,9 +56,16 @@ export default function Dashboard() {
         setLoading(false);
       }
     };
-    fetchJobs();
-  }, []);
 
+    if (
+      status === "authenticated" &&
+      ["ADMIN", "JOB_SEEKER"].includes(session?.user?.role)
+    ) {
+      fetchJobs();
+    }
+  }, [status, session]);
+
+  if (status === "loading") return <p>Loading session...</p>;
   if (loading) return <p>Loading job details...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
@@ -61,13 +83,22 @@ export default function Dashboard() {
           <span className="text-2xl font-bold text-green-600">JobBoard</span>
         </div>
         <div className="flex space-x-4 mr-4 gap-4">
-          <Link
-            href="/job-seeker"
-            className="text-green-500 hover:text-green-400 font-bold"
-          >
-            Home
-          </Link>
-          <Profile email="candidate@example.com" />{" "}
+          {session?.user?.role !== "ADMIN" ? (
+            <Link
+              href="/job-seeker"
+              className="text-green-500 hover:text-green-400 font-bold"
+            >
+              Home
+            </Link>
+          ) : (
+            <Link
+              href="/dashboard/admin"
+              className="text-green-500 hover:text-green-400 font-bold"
+            >
+              Home
+            </Link>
+          )}
+          <Profile email="guest@example.com" />
         </div>
       </nav>
       <div className="flex flex-col md:flex-row md:space-x-8 p-8">

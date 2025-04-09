@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Profile } from "@/components/header";
+import { Loader2 } from "lucide-react";
 
 interface Job {
   id: string;
@@ -87,7 +88,7 @@ export default function CompanyDashboard() {
   if (status === "loading" || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        Loading...
+        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
       </div>
     );
   }
@@ -104,9 +105,7 @@ export default function CompanyDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-300 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <header className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-green-700">
-            {companyName} Dashboard
-          </h1>
+          <h1 className="text-3xl font-bold text-green-700">Dashboard</h1>
           <div className="flex space-x-4 px-8">
             <Button
               variant="outline"
@@ -120,10 +119,6 @@ export default function CompanyDashboard() {
         </header>
 
         <Tabs defaultValue="jobs" className="space-y-6">
-          <h1 className="font-extrabold text-2xl text-green-700">
-            Posted Jobs
-          </h1>
-
           <TabsContent value="jobs">
             <Card className="shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader>

@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Loader2, Upload } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { BsArrowLeft } from "react-icons/bs";
 
 export default function ManageProfile() {
   const { data: session } = useSession();
@@ -108,11 +110,31 @@ export default function ManageProfile() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 sm:p-8">
       <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="flex flex-col items-center text-white rounded-t-lg">
+        <CardHeader className=" text-white rounded-t-lg">
           <CardTitle className="text-2xl font-bold text-black">
-            Edit Profile
+            {session?.user?.role === "COMPANY_ADMIN" ? (
+              <span className="flex items-start">
+                <Link href="/dashboard/company">
+                  <BsArrowLeft />{" "}
+                </Link>
+              </span>
+            ) : (
+              <span className="flex items-start">
+                <Link href="/dashboard">
+                  <BsArrowLeft />{" "}
+                </Link>
+              </span>
+            )}
+            <span className="flex items-start">
+              <Link href="/dashboard/company">
+                <BsArrowLeft />{" "}
+              </Link>
+            </span>
+            <span className="flex justify-center">Edit Profile</span>
           </CardTitle>
-          <p className="text-sm text-black">Update your personal information</p>
+          <p className="text-sm text-black flex flex-col items-center">
+            Update your personal information
+          </p>
         </CardHeader>
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">

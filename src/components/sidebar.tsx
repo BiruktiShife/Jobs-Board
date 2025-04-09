@@ -69,36 +69,21 @@ export function Sidebar<T extends string>({
       <div>
         {!isCollapsed && (
           <div className="flex items-center mb-6">
-            {role === "candidate" ? (
-              <Link
-                href="/dashboard"
-                className="flex items-center cursor-pointer"
-              >
-                <Image
-                  src="/logo.png"
-                  alt="logo"
-                  width={90}
-                  height={20}
-                  className="flex-shrink-0"
-                />
-                <span className="text-2xl font-bold text-green-600 hidden md:block ml-2">
-                  JobBoard
-                </span>
-              </Link>
-            ) : (
-              <div className="flex items-center mb-6">
-                <Image
-                  src="/logo.png"
-                  alt="logo"
-                  width={90}
-                  height={20}
-                  className="flex-shrink-0"
-                />
-                <span className="text-2xl font-bold text-green-600 hidden md:block ml-2">
-                  JobBoard
-                </span>
-              </div>
-            )}
+            <Link
+              href="/dashboard"
+              className="flex items-center cursor-pointer"
+            >
+              <Image
+                src="/logo.png"
+                alt="logo"
+                width={90}
+                height={20}
+                className="flex-shrink-0"
+              />
+              <span className="text-2xl font-bold text-green-600 hidden md:block ml-2">
+                JobBoard
+              </span>
+            </Link>
           </div>
         )}
         <nav>
