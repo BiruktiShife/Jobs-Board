@@ -52,8 +52,6 @@ interface TableProps {
 }
 
 export function CustomTable({ data, columns }: TableProps) {
-  console.log("CustomTable props - data:", data, "columns:", columns); // Debug
-
   const columnKeyMap: Record<ColumnName, DataKey> = {
     Title: "title",
     "Posted Date": "posteddate",

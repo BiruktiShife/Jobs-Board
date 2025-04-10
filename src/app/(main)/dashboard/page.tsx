@@ -1,3 +1,4 @@
+// src/app/dashboard/page.tsx
 "use client";
 
 import Image from "next/image";
@@ -36,7 +37,7 @@ export default function Dashboard() {
       router.push("/login");
     } else if (
       status === "authenticated" &&
-      !["ADMIN", "JOB_SEEKER"].includes(session.user?.role)
+      !["ADMIN", "JOB_SEEKER"].includes(session.user?.role || "")
     ) {
       router.push("/unauthorized");
     }
@@ -45,13 +46,13 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await fetch("/api/jobs");
-        if (!response.ok) throw new Error("Failed to fetch jobs");
+        const response = await fetch("/api/jobs/recommended-jobs");
+        if (!response.ok) throw new Error("Failed to fetch recommended jobs");
         const data = await response.json();
         setJobs(data);
       } catch (err) {
         console.error(err);
-        setError("Failed to load jobs");
+        setError("Failed to load recommended jobs");
       } finally {
         setLoading(false);
       }
@@ -59,15 +60,35 @@ export default function Dashboard() {
 
     if (
       status === "authenticated" &&
-      ["ADMIN", "JOB_SEEKER"].includes(session?.user?.role)
+      ["ADMIN", "JOB_SEEKER"].includes(session?.user?.role || "")
     ) {
       fetchJobs();
     }
   }, [status, session]);
 
-  if (status === "loading") return <p>Loading session...</p>;
-  if (loading) return <p>Loading job details...</p>;
-  if (error) return <p className="text-red-500">{error}</p>;
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-600">Loading session...</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-600">Loading job details...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -98,7 +119,7 @@ export default function Dashboard() {
               Home
             </Link>
           )}
-          <Profile email="guest@example.com" />
+          <Profile email={session?.user?.email || "guest@example.com"} />
         </div>
       </nav>
       <div className="flex flex-col md:flex-row md:space-x-8 p-8">
@@ -106,11 +127,17 @@ export default function Dashboard() {
           <HomeSection />
         </div>
         <aside className="border-l border-gray-300 pl-6">
-          <h2 className="text-2xl font-bold mb-4">Recommended Jobs</h2>
-          <div>
-            {jobs.map((job) => (
-              <JobCard key={job.id} jobData={job} />
-            ))}
+          <h2 className="text-2xl font-bold mb-4 text-gray-800">
+            Recommended Jobs
+          </h2>
+          <div className="space-y-4">
+            {jobs.length > 0 ? (
+              jobs.map((job) => <JobCard key={job.id} jobData={job} />)
+            ) : (
+              <p className="text-gray-600">
+                No recommended jobs match your study area yet.
+              </p>
+            )}
           </div>
         </aside>
       </div>

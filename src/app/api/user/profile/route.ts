@@ -15,7 +15,13 @@ export async function GET() {
   try {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      select: { name: true, email: true, image: true },
+      select: {
+        name: true,
+        email: true,
+        image: true,
+        phone: true, // New field
+        studyArea: true, // New field
+      },
     });
     if (!user)
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -38,6 +44,8 @@ export async function PUT(request: Request) {
   try {
     const formData = await request.formData();
     const name = formData.get("name") as string;
+    const phone = formData.get("phone") as string;
+    const studyArea = formData.get("studyArea") as string;
     const file = formData.get("profileImage") as File | null;
 
     let profileImageUrl = null;
@@ -56,9 +64,17 @@ export async function PUT(request: Request) {
       where: { email: session.user.email },
       data: {
         name: name || undefined,
+        phone: phone || undefined, // New field
+        studyArea: studyArea || undefined, // New field
         image: profileImageUrl || undefined,
       },
-      select: { name: true, email: true, image: true },
+      select: {
+        name: true,
+        email: true,
+        image: true,
+        phone: true, // New field
+        studyArea: true, // New field
+      },
     });
 
     return NextResponse.json(updatedUser);
@@ -73,6 +89,6 @@ export async function PUT(request: Request) {
 
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false, // Required for FormData handling
   },
 };

@@ -21,6 +21,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { FilterIcon, SearchIcon, ChevronDownIcon, Loader2 } from "lucide-react";
 import { BsArrowLeft } from "react-icons/bs";
 
@@ -34,12 +41,30 @@ interface Application {
   id: string;
   fullName: string;
   email: string;
+  yearOfBirth: number;
+  address: string;
+  phone: string;
+  portfolio?: string;
+  profession: string;
   careerLevel: string;
-  skills: string[];
+  coverLetter: string;
+  experiences: {
+    jobTitle: string;
+    company_name: string;
+    location: string;
+    responsibilities: string;
+  }[];
   degreeType: string;
+  institution: string;
+  graduationDate: string;
+  skills: string[];
   certifications: string[];
   languages: string[];
+  projects?: string;
+  volunteerWork?: string;
+  resumeUrl?: string;
   createdAt: string;
+  status?: string;
 }
 
 export default function ApplicantDetails() {
@@ -56,6 +81,8 @@ export default function ApplicantDetails() {
   const [skillFilter, setSkillFilter] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedApplicant, setSelectedApplicant] =
+    useState<Application | null>(null);
 
   const careerLevels = [
     "Senior Executive(C Level)",
@@ -147,7 +174,7 @@ export default function ApplicantDetails() {
               className="bg-green-600 text-white hover:bg-green-700 hover:text-white mr-6"
               onClick={() => router.push("/dashboard/company")}
             >
-              <BsArrowLeft />{" "}
+              <BsArrowLeft />
             </Button>
             Applicants for {job?.title || "Job"}
           </h1>
@@ -242,101 +269,246 @@ export default function ApplicantDetails() {
                 </TableHeader>
                 <TableBody>
                   {filteredApplicants.map((applicant) => (
-                    <TableRow key={applicant.id}>
-                      <TableCell>{applicant.fullName}</TableCell>
-                      <TableCell>{applicant.email}</TableCell>
-                      <TableCell>{applicant.careerLevel}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              className="flex items-center gap-1"
-                            >
-                              {applicant.skills.length} Skill(s)
-                              <ChevronDownIcon className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuLabel>Skills</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {applicant.skills.length > 0 ? (
-                              applicant.skills.map((skill, idx) => (
-                                <DropdownMenuItem key={idx}>
-                                  {skill}
-                                </DropdownMenuItem>
-                              ))
-                            ) : (
-                              <DropdownMenuItem>
-                                No skills listed
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                      <TableCell>{applicant.degreeType}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              className="flex items-center gap-1"
-                            >
-                              {applicant.certifications.length} Cert(s)
-                              <ChevronDownIcon className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuLabel>
-                              Certifications
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {applicant.certifications.length > 0 ? (
-                              applicant.certifications.map((cert, idx) => (
-                                <DropdownMenuItem key={idx}>
-                                  {cert}
-                                </DropdownMenuItem>
-                              ))
-                            ) : (
-                              <DropdownMenuItem>
-                                No certifications listed
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              className="flex items-center gap-1"
-                            >
-                              {applicant.languages.length} Lang(s)
-                              <ChevronDownIcon className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuLabel>Languages</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {applicant.languages.length > 0 ? (
-                              applicant.languages.map((lang, idx) => (
-                                <DropdownMenuItem key={idx}>
-                                  {lang}
-                                </DropdownMenuItem>
-                              ))
-                            ) : (
-                              <DropdownMenuItem>
-                                No languages listed
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(applicant.createdAt).toLocaleDateString()}
-                      </TableCell>
-                    </TableRow>
+                    <Dialog key={applicant.id}>
+                      <DialogTrigger asChild>
+                        <TableRow
+                          className="cursor-pointer hover:bg-gray-100"
+                          onClick={() => setSelectedApplicant(applicant)}
+                        >
+                          <TableCell>{applicant.fullName}</TableCell>
+                          <TableCell>{applicant.email}</TableCell>
+                          <TableCell>{applicant.careerLevel}</TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="flex items-center gap-1"
+                                >
+                                  {applicant.skills.length} Skill(s)
+                                  <ChevronDownIcon className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuLabel>Skills</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {applicant.skills.length > 0 ? (
+                                  applicant.skills.map((skill, idx) => (
+                                    <DropdownMenuItem key={idx}>
+                                      {skill}
+                                    </DropdownMenuItem>
+                                  ))
+                                ) : (
+                                  <DropdownMenuItem>
+                                    No skills listed
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                          <TableCell>{applicant.degreeType}</TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="flex items-center gap-1"
+                                >
+                                  {applicant.certifications.length} Cert(s)
+                                  <ChevronDownIcon className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuLabel>
+                                  Certifications
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {applicant.certifications.length > 0 ? (
+                                  applicant.certifications.map((cert, idx) => (
+                                    <DropdownMenuItem key={idx}>
+                                      {cert}
+                                    </DropdownMenuItem>
+                                  ))
+                                ) : (
+                                  <DropdownMenuItem>
+                                    No certifications listed
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="flex items-center gap-1"
+                                >
+                                  {applicant.languages.length} Lang(s)
+                                  <ChevronDownIcon className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuLabel>Languages</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {applicant.languages.length > 0 ? (
+                                  applicant.languages.map((lang, idx) => (
+                                    <DropdownMenuItem key={idx}>
+                                      {lang}
+                                    </DropdownMenuItem>
+                                  ))
+                                ) : (
+                                  <DropdownMenuItem>
+                                    No languages listed
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(applicant.createdAt).toLocaleDateString()}
+                          </TableCell>
+                        </TableRow>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader className="z-10 pb-4 border-b">
+                          <DialogTitle>
+                            {selectedApplicant?.fullName} - Application Details
+                          </DialogTitle>
+                        </DialogHeader>
+                        {selectedApplicant && (
+                          <div className="space-y-4">
+                            <div>
+                              <h3 className="font-semibold">Email</h3>
+                              <p>{selectedApplicant.email}</p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Year of Birth</h3>
+                              <p>{selectedApplicant.yearOfBirth}</p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Address</h3>
+                              <p>{selectedApplicant.address}</p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Phone</h3>
+                              <p>{selectedApplicant.phone}</p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Portfolio</h3>
+                              <p>
+                                {selectedApplicant.portfolio || "Not provided"}
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Profession</h3>
+                              <p>{selectedApplicant.profession}</p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Career Level</h3>
+                              <p>{selectedApplicant.careerLevel}</p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Cover Letter</h3>
+                              <p className="whitespace-pre-wrap">
+                                {selectedApplicant.coverLetter}
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Experiences</h3>
+                              {selectedApplicant.experiences.length > 0 ? (
+                                <ul className="list-disc pl-5">
+                                  {selectedApplicant.experiences.map(
+                                    (exp, idx) => (
+                                      <li key={idx}>
+                                        <strong>{exp.jobTitle}</strong> at{" "}
+                                        {exp.company_name} ({exp.location}) -{" "}
+                                        {exp.responsibilities}
+                                      </li>
+                                    )
+                                  )}
+                                </ul>
+                              ) : (
+                                <p>No experiences listed</p>
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Education</h3>
+                              <p>
+                                {selectedApplicant.degreeType} from{" "}
+                                {selectedApplicant.institution} (
+                                {new Date(
+                                  selectedApplicant.graduationDate
+                                ).toLocaleDateString()}
+                                )
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Skills</h3>
+                              <p>
+                                {selectedApplicant.skills.join(", ") || "None"}
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Certifications</h3>
+                              <p>
+                                {selectedApplicant.certifications.join(", ") ||
+                                  "None"}
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Languages</h3>
+                              <p>
+                                {selectedApplicant.languages.join(", ") ||
+                                  "None"}
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Projects</h3>
+                              <p>
+                                {selectedApplicant.projects || "Not provided"}
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Volunteer Work</h3>
+                              <p>
+                                {selectedApplicant.volunteerWork ||
+                                  "Not provided"}
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Resume URL</h3>
+                              <p>
+                                {selectedApplicant.resumeUrl ? (
+                                  <a
+                                    href={selectedApplicant.resumeUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline"
+                                  >
+                                    View Resume
+                                  </a>
+                                ) : (
+                                  "Not provided"
+                                )}
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Status</h3>
+                              <p>{selectedApplicant.status || "Pending"}</p>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">Applied On</h3>
+                              <p>
+                                {new Date(
+                                  selectedApplicant.createdAt
+                                ).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </DialogContent>
+                    </Dialog>
                   ))}
                 </TableBody>
               </Table>
