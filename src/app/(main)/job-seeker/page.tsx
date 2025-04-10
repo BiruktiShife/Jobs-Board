@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/sidebar";
-import { Header, Profile } from "@/components/header";
+import { Header } from "@/components/header";
 import { CustomTable } from "@/components/table";
 import JobCard from "@/utils/jobCard";
 import { useSession } from "next-auth/react";
@@ -26,7 +26,7 @@ interface AppliedJob {
   id: string;
   title: string;
   status: string;
-  company: string;
+  Company: string;
 }
 
 export default function JobSeeker() {
@@ -82,7 +82,6 @@ export default function JobSeeker() {
       <main className="flex-1 p-8 bg-gray-100">
         <span className="flex justify-between">
           <Header activeTab={activeTab} email={""} />
-          <Profile email="candidate@example.com" />{" "}
         </span>
 
         {activeTab === "Applied jobs" && (

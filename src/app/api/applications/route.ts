@@ -3,6 +3,7 @@ import { prisma } from "@/app/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 
 export const applicationSchema = z.object({
   jobId: z.string(),
@@ -27,7 +28,7 @@ export const applicationSchema = z.object({
     .min(1, "At least one experience is required"),
   degreeType: z.string().min(1, "Degree type is required"),
   institution: z.string().min(1, "Institution is required"),
-  graduationDate: z.string().transform((val) => new Date(val)), // Required Date
+  graduationDate: z.string().transform((val) => new Date(val)),
   skills: z.array(z.string()).max(5),
   certifications: z.array(z.string()).max(5),
   languages: z.array(z.string()).max(5),
@@ -48,8 +49,25 @@ export async function POST(request: Request) {
       ...body,
       email: session.user.email,
     });
-    console.log("🚀 ~ POST ~ data:", data);
 
+    // Check for existing application
+    const existingApplication = await prisma.application.findUnique({
+      where: {
+        userId_jobId: {
+          userId: session.user.id,
+          jobId: data.jobId,
+        },
+      },
+    });
+
+    if (existingApplication) {
+      return NextResponse.json(
+        { error: "You have already applied to this job" },
+        { status: 409 }
+      );
+    }
+
+    // Create new application
     const application = await prisma.application.create({
       data: {
         userId: session.user.id,
@@ -91,6 +109,17 @@ export async function POST(request: Request) {
       );
     }
     console.error("Error submitting application:", error);
+
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return NextResponse.json(
+        { error: "You have already applied to this job" },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Failed to submit application" },
       { status: 500 }

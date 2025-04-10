@@ -81,13 +81,11 @@ export async function GET(request: NextRequest) {
         select: { id: true, name: true, logo: true },
       });
       if (!company) {
-        console.log("No company found for adminId:", adminId); // Debug
         return NextResponse.json(
           { error: "Company not found" },
           { status: 404 }
         );
       }
-      console.log("Company fetched:", company); // Debug
       return NextResponse.json(company);
     } catch (error) {
       console.error("Error fetching company:", error);
@@ -99,7 +97,7 @@ export async function GET(request: NextRequest) {
   }
 
   const companies = await prisma.company.findMany({
-    select: { id: true, name: true },
+    select: { id: true, name: true, logo: true },
   });
   return NextResponse.json(companies);
 }

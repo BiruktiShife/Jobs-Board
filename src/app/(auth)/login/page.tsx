@@ -13,6 +13,7 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
+import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email"),
@@ -64,11 +65,13 @@ export default function LoginPage() {
   };
 
   const handleSocialSignIn = (provider: string) => {
-    signIn(provider, { callbackUrl: "/" });
+    signIn(provider, { callbackUrl: "/dashboard" });
   };
 
   if (status === "loading") {
-    return <div>Loading...</div>;
+    <div className="flex items-center justify-center min-h-screen">
+      <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+    </div>;
   }
 
   return (

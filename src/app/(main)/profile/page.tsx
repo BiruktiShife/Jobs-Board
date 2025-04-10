@@ -125,11 +125,7 @@ export default function ManageProfile() {
                 </Link>
               </span>
             )}
-            <span className="flex items-start">
-              <Link href="/dashboard/company">
-                <BsArrowLeft />{" "}
-              </Link>
-            </span>
+
             <span className="flex justify-center">Edit Profile</span>
           </CardTitle>
           <p className="text-sm text-black flex flex-col items-center">

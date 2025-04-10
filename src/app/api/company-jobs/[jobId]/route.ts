@@ -34,19 +34,7 @@ export async function GET(
         companyId: company.id, // Ensure the job belongs to the company
       },
       include: {
-        applications: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            careerLevel: true,
-            skills: true,
-            degreeType: true,
-            certifications: true,
-            languages: true,
-            createdAt: true,
-          },
-        },
+        applications: true,
       },
     });
 

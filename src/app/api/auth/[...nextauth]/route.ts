@@ -82,6 +82,67 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "google" || account?.provider === "linkedin") {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email! },
+        });
+
+        if (existingUser) {
+          const existingAccount = await prisma.account.findUnique({
+            where: {
+              provider_providerAccountId: {
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+              },
+            },
+          });
+
+          if (!existingAccount) {
+            await prisma.account.create({
+              data: {
+                userId: existingUser.id,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                type: account.type,
+                access_token: account.access_token,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token,
+              },
+            });
+          }
+          return true;
+        } else {
+          const newUser = await prisma.user.create({
+            data: {
+              email: user.email!,
+              name: user.name || profile?.name || "Unnamed User",
+              image: user.image,
+              role: "JOB_SEEKER",
+              emailVerified: new Date(),
+            },
+          });
+
+          await prisma.account.create({
+            data: {
+              userId: newUser.id,
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+              type: account.type,
+              access_token: account.access_token,
+              expires_at: account.expires_at,
+              token_type: account.token_type,
+              scope: account.scope,
+              id_token: account.id_token,
+            },
+          });
+          return true;
+        }
+      }
+      return true;
+    },
     async jwt({ token, user }: { token: CustomJWT; user?: CustomUser }) {
       if (user) {
         token.id = user.id;

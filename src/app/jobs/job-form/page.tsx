@@ -15,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import Image from "next/image";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 
@@ -35,14 +34,14 @@ interface Job {
 
 interface JobFormProps {
   onSubmit: (job: Job) => void;
-  companies: { id: string; name: string }[];
+  companies: { id: string; name: string; logo: string }[];
 }
 
 function JobForm({ onSubmit, companies }: JobFormProps) {
   const [job, setJob] = useState<Job>({
     title: "",
     companyId: companies[0]?.id || "",
-    logo: "",
+    logo: companies[0]?.logo || "",
     area: "",
     location: "",
     deadline: "",
@@ -53,7 +52,15 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
     requiredSkills: [""],
   });
 
-  const [preview, setPreview] = useState<string | null>(null);
+  const [, setPreview] = useState<string | null>(null);
+  const handleCompanyChange = (companyId: string) => {
+    const selectedCompany = companies.find((c) => c.id === companyId);
+    setJob((prev) => ({
+      ...prev,
+      companyId,
+      logo: selectedCompany?.logo || "", // Auto-update logo
+    }));
+  };
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -62,18 +69,6 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
 
   const handleTextArea = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setJob({ ...job, about_job: e.target.value });
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setJob({ ...job, logo: `/${file.name}` });
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const addField = (field: keyof Job) => {
@@ -157,13 +152,8 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
             </div>
 
             <div className="mb-4">
-              <Label htmlFor="companyId" className="ml-2 mb-1">
-                Company
-              </Label>
-              <Select
-                onValueChange={(value) => setJob({ ...job, companyId: value })}
-                value={job.companyId}
-              >
+              <Label htmlFor="companyId">Company</Label>
+              <Select onValueChange={handleCompanyChange} value={job.companyId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a company" />
                 </SelectTrigger>
@@ -250,26 +240,7 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
               </Select>
             </div>
 
-            <div className="mb-4">
-              <Label htmlFor="logo">Company Logo</Label>
-              <Input
-                id="logo"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-              />
-              {preview && (
-                <div className="mb-4">
-                  <Image
-                    src={preview}
-                    alt="Company Logo Preview"
-                    className="w-32 h-32 object-cover rounded-md"
-                    width={128}
-                    height={128}
-                  />
-                </div>
-              )}
-            </div>
+            <input type="hidden" name="logo" value={job.logo} />
 
             <Label htmlFor="about_job" className="ml-2 mb-1">
               About the Job
@@ -353,9 +324,9 @@ interface Job {
 }
 
 export default function PostJob() {
-  const [companies, setCompanies] = useState<{ id: string; name: string }[]>(
-    []
-  );
+  const [companies, setCompanies] = useState<
+    { id: string; name: string; logo: string }[]
+  >([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

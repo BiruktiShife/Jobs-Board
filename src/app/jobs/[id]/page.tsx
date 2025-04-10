@@ -10,6 +10,8 @@ import { MdBusiness } from "react-icons/md";
 import { AiOutlineCalendar } from "react-icons/ai";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
+import { Loader2 } from "lucide-react";
 
 interface Job {
   id: string;
@@ -35,7 +37,8 @@ export default function JobDetail({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-
+  const { data: session } = useSession();
+  const [isDisabled] = useState(true);
   useEffect(() => {
     const fetchJob = async () => {
       try {
@@ -75,7 +78,11 @@ export default function JobDetail({
   }, [params, router]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+      </div>
+    );
   }
 
   if (error) {
@@ -124,13 +131,21 @@ export default function JobDetail({
                 <div className="text-sm text-gray-500">{job.area}</div>
               </div>
             </div>
-
-            <Button
-              className="bg-green-600 text-white hover:bg-green-700 mt-4 px-10"
-              onClick={handleApplyNow}
-            >
-              Apply Now
-            </Button>
+            {session?.user?.role === "ADMIN" ? (
+              <Button
+                className="bg-green-600 text-white hover:bg-green-700 mt-4 px-10"
+                disabled={isDisabled}
+              >
+                Apply Now
+              </Button>
+            ) : (
+              <Button
+                className="bg-green-600 text-white hover:bg-green-700 mt-4 px-10"
+                onClick={handleApplyNow}
+              >
+                Apply Now
+              </Button>
+            )}
           </CardTitle>
         </CardHeader>
 

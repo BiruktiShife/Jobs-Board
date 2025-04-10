@@ -21,8 +21,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { FilterIcon, SearchIcon } from "lucide-react";
+import { FilterIcon, SearchIcon, ChevronDownIcon, Loader2 } from "lucide-react";
+import { BsArrowLeft } from "react-icons/bs";
 
 interface Job {
   id: string;
@@ -44,7 +44,7 @@ interface Application {
 
 export default function ApplicantDetails() {
   const router = useRouter();
-  const { jobId } = useParams(); // Get jobId from URL
+  const { jobId } = useParams();
   const [job, setJob] = useState<Job | null>(null);
   const [filteredApplicants, setFilteredApplicants] = useState<Application[]>(
     []
@@ -124,7 +124,7 @@ export default function ApplicantDetails() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        Loading...
+        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
       </div>
     );
   }
@@ -142,15 +142,15 @@ export default function ApplicantDetails() {
       <div className="max-w-7xl mx-auto space-y-6">
         <header className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-green-700">
+            <Button
+              variant="outline"
+              className="bg-green-600 text-white hover:bg-green-700 hover:text-white mr-6"
+              onClick={() => router.push("/dashboard/company")}
+            >
+              <BsArrowLeft />{" "}
+            </Button>
             Applicants for {job?.title || "Job"}
           </h1>
-          <Button
-            variant="outline"
-            className="bg-green-600 text-white hover:bg-green-700 hover:text-white"
-            onClick={() => router.push("/dashboard/company")}
-          >
-            Back to Dashboard
-          </Button>
         </header>
 
         <Card className="shadow-lg hover:shadow-xl transition-shadow">
@@ -247,28 +247,91 @@ export default function ApplicantDetails() {
                       <TableCell>{applicant.email}</TableCell>
                       <TableCell>{applicant.careerLevel}</TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {applicant.skills.map((skill, idx) => (
-                            <Badge key={idx} variant="secondary">
-                              {skill}
-                            </Badge>
-                          ))}
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="flex items-center gap-1"
+                            >
+                              {applicant.skills.length} Skill(s)
+                              <ChevronDownIcon className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuLabel>Skills</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {applicant.skills.length > 0 ? (
+                              applicant.skills.map((skill, idx) => (
+                                <DropdownMenuItem key={idx}>
+                                  {skill}
+                                </DropdownMenuItem>
+                              ))
+                            ) : (
+                              <DropdownMenuItem>
+                                No skills listed
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                       <TableCell>{applicant.degreeType}</TableCell>
                       <TableCell>
-                        <ul className="list-disc pl-5">
-                          {applicant.certifications.map((cert, idx) => (
-                            <li key={idx}>{cert}</li>
-                          ))}
-                        </ul>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="flex items-center gap-1"
+                            >
+                              {applicant.certifications.length} Cert(s)
+                              <ChevronDownIcon className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuLabel>
+                              Certifications
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {applicant.certifications.length > 0 ? (
+                              applicant.certifications.map((cert, idx) => (
+                                <DropdownMenuItem key={idx}>
+                                  {cert}
+                                </DropdownMenuItem>
+                              ))
+                            ) : (
+                              <DropdownMenuItem>
+                                No certifications listed
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                       <TableCell>
-                        <ul className="list-disc pl-5">
-                          {applicant.languages.map((lang, idx) => (
-                            <li key={idx}>{lang}</li>
-                          ))}
-                        </ul>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="flex items-center gap-1"
+                            >
+                              {applicant.languages.length} Lang(s)
+                              <ChevronDownIcon className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuLabel>Languages</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {applicant.languages.length > 0 ? (
+                              applicant.languages.map((lang, idx) => (
+                                <DropdownMenuItem key={idx}>
+                                  {lang}
+                                </DropdownMenuItem>
+                              ))
+                            ) : (
+                              <DropdownMenuItem>
+                                No languages listed
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                       <TableCell>
                         {new Date(applicant.createdAt).toLocaleDateString()}

@@ -113,6 +113,7 @@ model Application {
   job            Job      @relation(fields: [jobId], references: [id])
   userId         String
   user           User     @relation(fields: [userId], references: [id])
+  @@unique([userId, jobId])
   fullName       String
   yearOfBirth    Int
   email          String
