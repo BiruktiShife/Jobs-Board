@@ -34,7 +34,7 @@ export const applicationSchema = z.object({
   languages: z.array(z.string()).max(5),
   projects: z.string().optional(),
   volunteerWork: z.string().optional(),
-  resumeUrl: z.string().min(1, "Resume is required").optional(),
+  resumeUrl: z.string().url("Invalid resume URL"),
 });
 
 export async function POST(request: Request) {

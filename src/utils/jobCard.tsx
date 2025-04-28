@@ -162,7 +162,7 @@ export default function JobCard({ jobData }: JobCardProps) {
             <p className="text-gray-700">
               {expanded || job.about_job.length <= 200
                 ? job.about_job
-                : job.about_job.slice(0, 200) + "..."}
+                : job.about_job.slice(0, 100) + "..."}
             </p>
             {job.about_job.length > 200 && (
               <button

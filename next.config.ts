@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    domains: [
+      "silver-accepted-barracuda-955.mypinata.cloud",
+      "gateway.pinata.cloud",
+    ],
+  },
 };
 
 export default nextConfig;

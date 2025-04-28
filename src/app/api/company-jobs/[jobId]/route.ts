@@ -31,7 +31,7 @@ export async function GET(
     const job = await prisma.job.findUnique({
       where: {
         id: jobId,
-        companyId: company.id, // Ensure the job belongs to the company
+        companyId: company.id,
       },
       include: {
         applications: true,

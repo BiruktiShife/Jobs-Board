@@ -16,7 +16,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import {
+  BadgeCheck,
+  Briefcase,
+  Building2,
+  CalendarDays,
+  Globe,
+  Info,
+  ListTodo,
+  Loader2,
+  MapPin,
+  Wrench,
+  ChevronRight,
+  ChevronLeft,
+  CheckCircle,
+} from "lucide-react";
+import { FaBuilding } from "react-icons/fa";
 
 interface Job {
   title: string;
@@ -51,14 +66,15 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
     about_job: "",
     requiredSkills: [""],
   });
-
+  const [step, setStep] = useState(1);
   const [, setPreview] = useState<string | null>(null);
+
   const handleCompanyChange = (companyId: string) => {
     const selectedCompany = companies.find((c) => c.id === companyId);
     setJob((prev) => ({
       ...prev,
       companyId,
-      logo: selectedCompany?.logo || "", // Auto-update logo
+      logo: selectedCompany?.logo || "",
     }));
   };
 
@@ -112,6 +128,7 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
     });
     setPreview(null);
   };
+
   const industryOptions = [
     "Programming",
     "Business",
@@ -124,203 +141,375 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-green-300">
-      <Card className="max-w-5xl mx-auto p-6">
-        <CardHeader>
-          <CardTitle className="flex items-center text-2xl font-bold text-green-700">
-            <span className="mr-5">
-              <Link href="/dashboard/company">
-                <BsArrowLeft />{" "}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8">
+      <Card className="max-w-3xl mx-auto shadow-lg border-0">
+        <CardHeader className="bg-green-50 rounded-t-lg border-b border-green-100">
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mr-4 text-green-600 hover:bg-green-100"
+              asChild
+            >
+              <Link href="/admin">
+                <BsArrowLeft className="h-5 w-5" />
               </Link>
-            </span>
-            Create Job Posting
-          </CardTitle>
+            </Button>
+            <CardTitle className="text-2xl font-bold text-green-800 flex items-center p-3">
+              <Briefcase className="h-6 w-6 mr-3 text-green-600" />
+              Create Job Posting
+            </CardTitle>
+          </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="p-8">
           <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <Label htmlFor="title" className="ml-2 mb-1">
-                Job Title
-              </Label>
-              <Input
-                id="title"
-                name="title"
-                value={job.title}
-                onChange={handleInput}
-              />
+            <div className="flex justify-center mb-8">
+              <div className="flex items-center">
+                <div
+                  className={`flex items-center px-4 py-1 rounded-full ${
+                    step === 1
+                      ? "bg-green-600 text-white"
+                      : "bg-green-100 text-green-800"
+                  }`}
+                >
+                  {step === 1 ? (
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                  ) : (
+                    <span className="w-4 h-4 mr-2 rounded-full bg-green-600 text-white text-xs flex items-center justify-center">
+                      1
+                    </span>
+                  )}
+                  Basic Information
+                </div>
+                <div className="w-16 h-px bg-gray-300 mx-2"></div>
+                <div
+                  className={`flex items-center px-4 py-1 rounded-full ${
+                    step === 2
+                      ? "bg-green-600 text-white"
+                      : "bg-green-100 text-green-800"
+                  }`}
+                >
+                  {step === 2 ? (
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                  ) : (
+                    <span className="w-4 h-4 mr-2 rounded-full bg-green-600 text-white text-xs flex items-center justify-center">
+                      2
+                    </span>
+                  )}
+                  Job Details
+                </div>
+              </div>
             </div>
 
-            <div className="mb-4">
-              <Label htmlFor="companyId">Company</Label>
-              <Select onValueChange={handleCompanyChange} value={job.companyId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a company" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id}>
-                        {company.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="mb-4">
-              <Label htmlFor="area" className="ml-2 mb-1">
-                Industry Area
-              </Label>
-              <Select
-                onValueChange={(value) => setJob({ ...job, area: value })}
-                value={job.area}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select an industry" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {industryOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="mb-4">
-              <Label htmlFor="location" className="ml-2 mb-1">
-                Location
-              </Label>
-              <Input
-                id="location"
-                name="location"
-                value={job.location}
-                onChange={handleInput}
-              />
-            </div>
-
-            <div className="mb-4">
-              <Label htmlFor="deadline" className="ml-2 mb-1">
-                Deadline
-              </Label>
-              <Input
-                id="deadline"
-                type="date"
-                name="deadline"
-                value={job.deadline}
-                onChange={handleInput}
-              />
-            </div>
-
-            <div className="mb-4">
-              <Label htmlFor="site" className="ml-2 mb-1">
-                Employment Type
-              </Label>
-              <Select
-                onValueChange={(value) =>
-                  setJob({ ...job, site: value as Job["site"] })
-                }
-                defaultValue={job.site}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Employment Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="Full_time">Full-time</SelectItem>
-                    <SelectItem value="Part_time">Part-time</SelectItem>
-                    <SelectItem value="Freelance">Freelance</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <input type="hidden" name="logo" value={job.logo} />
-
-            <Label htmlFor="about_job" className="ml-2 mb-1">
-              About the Job
-            </Label>
-            <Textarea
-              id="about_job"
-              name="about_job"
-              value={job.about_job}
-              onChange={handleTextArea}
-              rows={4}
-              className="mb-2"
-            />
-
-            {(
-              ["qualifications", "responsibilities", "requiredSkills"] as const
-            ).map((field) => (
-              <Card key={field} className="mb-4">
-                <CardHeader>
-                  <CardTitle>{field.replace(/([A-Z])/g, " $1")}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {(job[field] as string[]).map((item, index) => (
-                    <div key={index} className="flex items-center mb-2">
-                      <Input
-                        value={item}
-                        onChange={(e) => {
-                          const newValues = [...(job[field] as string[])];
-                          newValues[index] = e.target.value;
-                          setJob({ ...job, [field]: newValues });
-                        }}
-                      />
-                      {index > 0 && (
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => removeField(field, index)}
-                        >
-                          ×
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                  <Button
-                    variant="outline"
-                    type="button"
-                    className="bg-green-600 hover:bg-green-500 text-white hover:text-white"
-                    onClick={() => addField(field)}
+            {step === 1 && (
+              <div className="space-y-6">
+                <div>
+                  <Label
+                    htmlFor="title"
+                    className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700"
                   >
-                    <BsPlus className="mr-2" /> Add{" "}
-                    {field.replace(/([A-Z])/g, " $1")}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                    <Briefcase className="h-5 w-5 text-green-600" />
+                    Job Title
+                  </Label>
+                  <Input
+                    id="title"
+                    name="title"
+                    value={job.title}
+                    onChange={handleInput}
+                    className="focus-visible:ring-green-500"
+                    placeholder="e.g. Senior Frontend Developer"
+                    required
+                  />
+                </div>
 
-            <Button
-              type="submit"
-              className="bg-green-600 hover:bg-green-500 text-white"
-            >
-              Post Job
-            </Button>
+                <div>
+                  <Label
+                    htmlFor="companyId"
+                    className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700"
+                  >
+                    <FaBuilding className="h-5 w-5 text-green-600" />
+                    Company
+                  </Label>
+                  <Select
+                    onValueChange={handleCompanyChange}
+                    value={job.companyId}
+                    required
+                  >
+                    <SelectTrigger className="focus:ring-green-500">
+                      <SelectValue placeholder="Select a company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {companies.map((company) => (
+                          <SelectItem
+                            key={company.id}
+                            value={company.id}
+                            className="hover:bg-green-50"
+                          >
+                            {company.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label
+                      htmlFor="area"
+                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700"
+                    >
+                      <Building2 className="h-5 w-5 text-green-600" />
+                      Industry Area
+                    </Label>
+                    <Select
+                      onValueChange={(value) => setJob({ ...job, area: value })}
+                      value={job.area}
+                      required
+                    >
+                      <SelectTrigger className="focus:ring-green-500">
+                        <SelectValue placeholder="Select an industry" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {industryOptions.map((option) => (
+                            <SelectItem
+                              key={option}
+                              value={option}
+                              className="hover:bg-green-50"
+                            >
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label
+                      htmlFor="location"
+                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700"
+                    >
+                      <MapPin className="h-5 w-5 text-green-600" />
+                      Location
+                    </Label>
+                    <Input
+                      id="location"
+                      name="location"
+                      value={job.location}
+                      onChange={handleInput}
+                      placeholder="e.g. New York, NY"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label
+                      htmlFor="deadline"
+                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700"
+                    >
+                      <CalendarDays className="h-5 w-5 text-green-600" />
+                      Deadline
+                    </Label>
+                    <Input
+                      id="deadline"
+                      type="date"
+                      name="deadline"
+                      value={job.deadline}
+                      onChange={handleInput}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label
+                      htmlFor="site"
+                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700"
+                    >
+                      <Globe className="h-5 w-5 text-green-600" />
+                      Employment Type
+                    </Label>
+                    <Select
+                      onValueChange={(value) =>
+                        setJob({ ...job, site: value as Job["site"] })
+                      }
+                      defaultValue={job.site}
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Employment Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem
+                            value="Full_time"
+                            className="hover:bg-green-50"
+                          >
+                            Full-time
+                          </SelectItem>
+                          <SelectItem
+                            value="Part_time"
+                            className="hover:bg-green-50"
+                          >
+                            Part-time
+                          </SelectItem>
+                          <SelectItem
+                            value="Freelance"
+                            className="hover:bg-green-50"
+                          >
+                            Freelance
+                          </SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="about_job"
+                    className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700"
+                  >
+                    <Info className="h-5 w-5 text-green-600" />
+                    About the Job
+                  </Label>
+                  <Textarea
+                    id="about_job"
+                    name="about_job"
+                    value={job.about_job}
+                    onChange={handleTextArea}
+                    rows={5}
+                    className="focus-visible:ring-green-500"
+                    placeholder="Describe the job responsibilities, company culture, and other relevant details..."
+                    required
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    onClick={() => setStep(2)}
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 flex items-center"
+                  >
+                    Next <ChevronRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="space-y-6">
+                {(
+                  [
+                    "qualifications",
+                    "responsibilities",
+                    "requiredSkills",
+                  ] as const
+                ).map((field) => {
+                  const icons = {
+                    qualifications: (
+                      <BadgeCheck className="h-5 w-5 text-green-600" />
+                    ),
+                    responsibilities: (
+                      <ListTodo className="h-5 w-5 text-green-600" />
+                    ),
+                    requiredSkills: (
+                      <Wrench className="h-5 w-5 text-green-600" />
+                    ),
+                  };
+
+                  const titles = {
+                    qualifications: "Qualifications",
+                    responsibilities: "Responsibilities",
+                    requiredSkills: "Required Skills",
+                  };
+
+                  return (
+                    <Card key={field} className="border border-gray-200">
+                      <CardHeader className="bg-gray-50 border-b border-gray-200 p-2">
+                        <CardTitle className="flex items-center gap-3 text-lg font-semibold text-gray-800">
+                          {icons[field]}
+                          {titles[field]}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-6">
+                        <div className="space-y-3">
+                          {(job[field] as string[]).map((item, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center gap-2"
+                            >
+                              <Input
+                                value={item}
+                                onChange={(e) => {
+                                  const newValues = [
+                                    ...(job[field] as string[]),
+                                  ];
+                                  newValues[index] = e.target.value;
+                                  setJob({ ...job, [field]: newValues });
+                                }}
+                                className="flex-1 focus-visible:ring-green-500"
+                                placeholder={`Enter ${titles[
+                                  field
+                                ].toLowerCase()}`}
+                                required
+                              />
+                              {index > 0 && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                  onClick={() => removeField(field, index)}
+                                  type="button"
+                                >
+                                  ×
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <Button
+                          variant="outline"
+                          type="button"
+                          className="mt-4 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border-green-200 flex items-center"
+                          onClick={() => addField(field)}
+                        >
+                          <BsPlus className="h-5 w-5 mr-2" />
+                          Add {titles[field].toLowerCase()}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+
+                <div className="flex justify-between pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex items-center gap-2 text-gray-700 hover:bg-gray-100"
+                    onClick={() => setStep(1)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Back
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 flex items-center gap-2"
+                  >
+                    <Briefcase className="h-4 w-4" />
+                    Post Job
+                  </Button>
+                </div>
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>
     </div>
   );
-}
-
-interface Job {
-  title: string;
-  companyId: string;
-  logo: string;
-  area: string;
-  location: string;
-  deadline: string;
-  site: "Full_time" | "Part_time" | "Freelance";
-  qualifications: string[];
-  responsibilities: string[];
-  about_job: string;
-  requiredSkills: string[];
 }
 
 export default function PostJob() {

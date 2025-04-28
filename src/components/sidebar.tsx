@@ -47,9 +47,7 @@ export function Sidebar<T extends string>({
   }, []);
 
   const tabs =
-    role === "admin"
-      ? ["jobs", "applicants", "companies"]
-      : ["Applied jobs", "bookmarks"];
+    role === "admin" ? ["jobs", "companies"] : ["Applied jobs", "bookmarks"];
 
   return (
     <aside

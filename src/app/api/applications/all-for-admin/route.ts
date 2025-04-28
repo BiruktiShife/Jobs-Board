@@ -14,16 +14,43 @@ export async function GET() {
     const applications = await prisma.application.findMany({
       include: {
         job: {
-          select: { title: true },
+          select: {
+            id: true,
+            title: true,
+            company: {
+              select: {
+                name: true,
+              },
+            },
+          },
         },
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
       },
     });
 
     const applicantData = applications.map((app) => ({
       id: app.id,
-      name: app.fullName,
-      job: app.job.title,
-      status: app.status || "Pending",
+      name: app.user.name,
+      email: app.user.email,
+      job: {
+        id: app.job.id, // Include job.id
+        title: app.job.title,
+        company: {
+          name: app.job.company.name,
+        },
+      },
+      jobId: app.job.id, // Add jobId for filtering
+      jobTitle: app.job.title,
+      company: app.job.company.name,
+      appliedOn: app.createdAt.toISOString().split("T")[0],
     }));
 
     return NextResponse.json(applicantData, { status: 200 });

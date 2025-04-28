@@ -105,6 +105,7 @@ model Company {
   adminId   String?   @unique
   admin     User?     @relation(name: "CompanyAdmin", fields: [adminId], references: [id])
   users     User[]   @relation(name: "CompanyUsers")
+  userId    String?  @unique
   jobs      Job[]
   createdAt DateTime @default(now())
 }

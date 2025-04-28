@@ -1,4 +1,3 @@
-// src/app/profile/manage/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -14,8 +13,17 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"; // Import Select components
-import { Loader2, Upload, CheckCircle2, AlertCircle } from "lucide-react";
+} from "@/components/ui/select";
+import {
+  Loader2,
+  Upload,
+  CheckCircle2,
+  AlertCircle,
+  User,
+  Mail,
+  Phone,
+  BookOpen,
+} from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -27,7 +35,7 @@ export default function ManageProfile() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [studyArea, setStudyArea] = useState<string>(""); // Study area as string
+  const [studyArea, setStudyArea] = useState<string>("");
   const [profileImage, setProfileImage] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +44,6 @@ export default function ManageProfile() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Define study area options
   const studyAreaOptions = [
     "Programming",
     "Business",
@@ -47,6 +54,18 @@ export default function ManageProfile() {
     "Engineering",
     "Sales",
   ];
+  const pinataRewriteUrl = (url: string | null | undefined): string => {
+    if (!url) return "";
+    try {
+      const cidMatch = url.match(/ipfs\/([^/]+)/);
+      const cid = cidMatch?.[1];
+      return cid
+        ? `https://silver-accepted-barracuda-955.mypinata.cloud/ipfs/${cid}`
+        : url;
+    } catch {
+      return url;
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -57,8 +76,8 @@ export default function ManageProfile() {
         setName(data.name || "");
         setEmail(data.email || "");
         setPhone(data.phone || "");
-        setStudyArea(data.studyArea || ""); // Ensure it matches an option or empty
-        setProfileImage(data.image || "");
+        setStudyArea(data.studyArea || "");
+        setProfileImage(pinataRewriteUrl(data.image) || "");
       } catch (err) {
         console.error("Error fetching profile:", err);
         setError("Failed to load profile data");
@@ -67,13 +86,14 @@ export default function ManageProfile() {
       }
     };
     fetchProfile();
-  }, []);
+  }, [session]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
       setError(null);
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result as string);
@@ -88,35 +108,73 @@ export default function ManageProfile() {
     setError(null);
     setSuccess(null);
 
-    const formData = new FormData();
-    if (name) formData.append("name", name);
-    if (phone) formData.append("phone", phone);
-    if (studyArea) formData.append("studyArea", studyArea); // Send selected study area
-    if (file) formData.append("profileImage", file);
+    let imageUrl = profileImage;
+
+    if (file) {
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          console.log("Pinata upload attempt:", attempt);
+          const formData = new FormData();
+          formData.append("file", file);
+          const response = await fetch("/api/pinata/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.message || "Failed to upload image");
+          }
+
+          imageUrl = data.url;
+          console.log("Pinata upload success:", imageUrl);
+          break;
+        } catch (err) {
+          console.error("Pinata upload error (attempt", attempt, "):", err);
+          if (attempt === 3) {
+            setError(
+              "Failed to upload image after multiple attempts. Please try again."
+            );
+            setIsSubmitting(false);
+            return;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+    }
 
     try {
+      const profileData = { name, phone, studyArea, image: imageUrl };
       const response = await fetch("/api/user/profile", {
         method: "PUT",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(profileData),
       });
+
+      const data = await response.json();
       if (response.ok) {
-        const updatedUser = await response.json();
-        setName(updatedUser.name || "");
-        setEmail(updatedUser.email || "");
-        setPhone(updatedUser.phone || "");
-        setStudyArea(updatedUser.studyArea || "");
-        setProfileImage(updatedUser.image || "");
+        const refreshedProfile = await fetch("/api/user/profile");
+        const updatedData = await refreshedProfile.json();
+        setName(updatedData.name || "");
+        setEmail(updatedData.email || "");
+        setPhone(updatedData.phone || "");
+        setStudyArea(updatedData.studyArea || "");
+        setProfileImage(pinataRewriteUrl(updatedData.image));
         setFile(null);
         setPreview(null);
         setSuccess("Profile updated successfully!");
         setTimeout(() => setSuccess(null), 3000);
+        window.dispatchEvent(new Event("profileUpdated"));
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || "Failed to update profile");
+        throw new Error(data.message || "Failed to update profile");
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      setError("An unexpected error occurred");
+      setError(
+        error instanceof Error ? error.message : "An unexpected error occurred"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -141,16 +199,16 @@ export default function ManageProfile() {
   }
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-green-100 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8 px-4 sm:px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-lg"
+        className="max-w-md mx-auto"
       >
-        <Card className="shadow-xl rounded-xl overflow-hidden border border-gray-200">
-          <CardHeader className="bg-gradient-to-r from-green-500 to-green-700 text-white p-6">
-            <div className="flex items-center justify-between">
+        <Card className="w-full shadow-lg rounded-xl overflow-hidden border-0">
+          <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 relative">
+            <div className="absolute top-4 left-4">
               <Link
                 href={
                   session?.user?.role === "COMPANY_ADMIN"
@@ -161,32 +219,34 @@ export default function ManageProfile() {
               >
                 <BsArrowLeft className="w-6 h-6" />
               </Link>
-              <div>
-                <CardTitle className="text-2xl font-semibold">
-                  Edit Profile
-                </CardTitle>
-                <p className="text-sm text-green-100 mt-1">
-                  Keep your information up-to-date
-                </p>
-              </div>
-              <div className="w-6" /> {/* Spacer */}
+            </div>
+            <div className="text-center pt-2">
+              <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
+                <User className="w-6 h-6" />
+                Edit Profile
+              </CardTitle>
+              <p className="text-green-100 mt-1 text-sm">
+                Update your personal information
+              </p>
             </div>
           </CardHeader>
+
           <CardContent className="p-6 bg-white">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Profile Image Section */}
               <div className="flex flex-col items-center">
                 <div className="relative group">
                   {preview || profileImage ? (
-                    <Image
-                      src={preview || profileImage}
-                      alt="Profile Preview"
-                      width={120}
-                      height={120}
-                      className="rounded-full object-cover border-4 border-white shadow-lg transition-transform group-hover:scale-105"
-                    />
+                    <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-green-100 shadow-md group-hover:shadow-lg transition-all">
+                      <Image
+                        src={preview || profileImage}
+                        alt="Profile Preview"
+                        fill
+                        className="object-cover"
+                        onError={() => setProfileImage("")}
+                      />
+                    </div>
                   ) : (
-                    <Avatar className="w-32 h-32">
+                    <Avatar className="w-32 h-32 border-4 border-green-100 shadow-md">
                       <AvatarFallback className="bg-green-100 text-green-700 text-4xl font-medium">
                         {name ? name.charAt(0).toUpperCase() : "U"}
                       </AvatarFallback>
@@ -194,9 +254,9 @@ export default function ManageProfile() {
                   )}
                   <label
                     htmlFor="profileImage"
-                    className="absolute bottom-0 right-0 bg-green-600 p-2 rounded-full cursor-pointer hover:bg-green-700 transition-all shadow-md group-hover:scale-110"
+                    className="absolute -bottom-2 -right-2 bg-green-600 hover:bg-green-700 text-white p-2 rounded-full cursor-pointer transition-all shadow-lg flex items-center justify-center"
                   >
-                    <Upload className="w-5 h-5 text-white" />
+                    <Upload className="w-5 h-5" />
                     <Input
                       id="profileImage"
                       type="file"
@@ -206,18 +266,18 @@ export default function ManageProfile() {
                     />
                   </label>
                 </div>
-                <p className="text-sm text-gray-600 mt-3 font-light">
-                  Upload a professional headshot
+                <p className="text-xs text-gray-500 mt-3">
+                  JPG, GIF or PNG. Max 2MB
                 </p>
               </div>
 
-              {/* Form Fields */}
-              <div className="grid gap-4">
-                <div>
+              <div className="space-y-4">
+                <div className="space-y-1">
                   <Label
                     htmlFor="name"
-                    className="text-sm font-medium text-gray-800"
+                    className="flex items-center gap-2 text-gray-700"
                   >
+                    <User className="w-4 h-4 text-green-600" />
                     Full Name
                   </Label>
                   <Input
@@ -225,30 +285,32 @@ export default function ManageProfile() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g., John Doe"
-                    className="mt-1 border-gray-200 bg-gray-50 focus:border-green-500 focus:ring-green-500 rounded-md shadow-sm"
+                    className="focus:ring-green-500 focus:border-green-500 border-gray-300"
                   />
                 </div>
 
-                <div>
+                <div className="space-y-1">
                   <Label
                     htmlFor="email"
-                    className="text-sm font-medium text-gray-800"
+                    className="flex items-center gap-2 text-gray-700"
                   >
+                    <Mail className="w-4 h-4 text-green-600" />
                     Email Address
                   </Label>
                   <Input
                     id="email"
                     value={email}
                     disabled
-                    className="mt-1 border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed rounded-md shadow-sm"
+                    className="bg-gray-100 text-gray-600 cursor-not-allowed"
                   />
                 </div>
 
-                <div>
+                <div className="space-y-1">
                   <Label
                     htmlFor="phone"
-                    className="text-sm font-medium text-gray-800"
+                    className="flex items-center gap-2 text-gray-700"
                   >
+                    <Phone className="w-4 h-4 text-green-600" />
                     Phone Number
                   </Label>
                   <Input
@@ -256,54 +318,59 @@ export default function ManageProfile() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="e.g., +251 923-456-7891"
-                    className="mt-1 border-gray-200 bg-gray-50 focus:border-green-500 focus:ring-green-500 rounded-md shadow-sm"
+                    className="focus:ring-green-500 focus:border-green-500 border-gray-300"
                   />
                 </div>
 
-                <div>
-                  {session?.user?.role === "JOB_SEEKER" && (
-                    <>
-                      <Label
-                        htmlFor="studyArea"
-                        className="text-sm font-medium text-gray-800"
-                      >
-                        Study Area
-                      </Label>
-                      <Select onValueChange={setStudyArea} value={studyArea}>
-                        <SelectTrigger className="mt-1 border-gray-200 bg-gray-50 focus:border-green-500 focus:ring-green-500 rounded-md shadow-sm">
-                          <SelectValue placeholder="Select your study area" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {studyAreaOptions.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </>
-                  )}
-                </div>
+                {session?.user?.role === "JOB_SEEKER" && (
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="studyArea"
+                      className="flex items-center gap-2 text-gray-700"
+                    >
+                      <BookOpen className="w-4 h-4 text-green-600" />
+                      Study Area
+                    </Label>
+                    <Select onValueChange={setStudyArea} value={studyArea}>
+                      <SelectTrigger className="focus:ring-green-500 focus:border-green-500 border-gray-300">
+                        <SelectValue placeholder="Select your study area" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {studyAreaOptions.map((option) => (
+                          <SelectItem
+                            key={option}
+                            value={option}
+                            className="hover:bg-green-50"
+                          >
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
+              {/* Status Messages */}
               {error && (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-center text-sm text-red-700 bg-red-100 p-3 rounded-md shadow-sm"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-start gap-2 p-3 bg-red-50 text-red-700 rounded-md border border-red-200"
                 >
-                  <AlertCircle className="w-5 h-5 mr-2" />
-                  {error}
+                  <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm">{error}</p>
                 </motion.div>
               )}
+
               {success && (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-center text-sm text-green-700 bg-green-100 p-3 rounded-md shadow-sm"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-start gap-2 p-3 bg-green-50 text-green-700 rounded-md border border-green-200"
                 >
-                  <CheckCircle2 className="w-5 h-5 mr-2" />
-                  {success}
+                  <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm">{success}</p>
                 </motion.div>
               )}
 
@@ -312,17 +379,21 @@ export default function ManageProfile() {
                 type="submit"
                 disabled={isSubmitting}
                 className={cn(
-                  "w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition-all duration-300 shadow-md",
-                  isSubmitting && "opacity-70 cursor-not-allowed"
+                  "w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition-all shadow-md",
+                  "flex items-center justify-center gap-2",
+                  isSubmitting && "opacity-80 cursor-not-allowed"
                 )}
               >
                 {isSubmitting ? (
-                  <span className="flex items-center justify-center">
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Saving...
-                  </span>
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Saving Changes...</span>
+                  </>
                 ) : (
-                  "Save Changes"
+                  <>
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span>Save Changes</span>
+                  </>
                 )}
               </Button>
             </form>

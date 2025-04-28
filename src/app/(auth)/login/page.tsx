@@ -30,7 +30,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (status === "authenticated") {
       if (session?.user.role === "ADMIN") {
-        router.push("/dashboard/admin");
+        router.push("/admin");
       } else if (session?.user.role === "JOB_SEEKER") {
         router.push("/dashboard");
       } else if (session?.user.role === "COMPANY_ADMIN") {
@@ -99,7 +99,7 @@ export default function LoginPage() {
             />
             <Button
               type="submit"
-              className="flex items-center justify-between bg-green-600 hover:bg-green-700 w-full"
+              className="flex items-center justify-center bg-green-600 hover:bg-green-700 w-full"
             >
               Log In <BsArrowRight />
             </Button>

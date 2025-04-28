@@ -1,4 +1,3 @@
-// src/app/dashboard/page.tsx
 "use client";
 
 import Image from "next/image";
@@ -9,6 +8,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 interface Job {
   id: string;
@@ -31,7 +31,6 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const { data: session, status } = useSession();
   const router = useRouter();
-
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -68,16 +67,18 @@ export default function Dashboard() {
 
   if (status === "loading") {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-600">Loading session...</p>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-green-100">
+        <Loader2 className="w-10 h-10 animate-spin text-green-600" />
       </div>
     );
   }
-
+  if (!session || !session.user.email) {
+    return null;
+  }
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-600">Loading job details...</p>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-green-100">
+        <Loader2 className="w-10 h-10 animate-spin text-green-600" />
       </div>
     );
   }
@@ -91,35 +92,29 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <nav className="flex items-center justify-between bg-gray-800 shadow-md py-4">
+    <div className="flex flex-col min-h-screen pt-20">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-transparent backdrop-blur-md shadow-md py-1">
         <div className="flex items-center gap-0 px-8">
-          <Image
-            src="/logo.png"
-            alt="logo"
-            width={100}
-            height={20}
-            className="flex-shrink-0"
-          />
+          <Image src="/logo.png" alt="logo" width={100} height={20} />
           <span className="text-2xl font-bold text-green-600">JobBoard</span>
         </div>
         <div className="flex space-x-4 mr-4 gap-4">
           {session?.user?.role !== "ADMIN" ? (
             <Link
               href="/job-seeker"
-              className="text-green-500 hover:text-green-400 font-bold"
+              className="text-green-500 hover:text-green-400 font-bold mt-3"
             >
               Home
             </Link>
           ) : (
             <Link
               href="/dashboard/admin"
-              className="text-green-500 hover:text-green-400 font-bold"
+              className="text-green-500 hover:text-green-400 font-bold mt-3"
             >
               Home
             </Link>
           )}
-          <Profile email={session?.user?.email || "guest@example.com"} />
+          <Profile email={session.user.email} />
         </div>
       </nav>
       <div className="flex flex-col md:flex-row md:space-x-8 p-8">

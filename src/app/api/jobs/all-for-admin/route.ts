@@ -16,13 +16,15 @@ export async function GET() {
         applications: {
           select: { id: true },
         },
+        company: { select: { name: true } },
       },
     });
 
     const jobData = jobs.map((job) => ({
       id: job.id,
       title: job.title,
-      posteddate: job.created_at.toISOString().split("T")[0],
+      company: job.company.name,
+      postedDate: job.created_at.toISOString().split("T")[0],
       applications: job.applications.length,
     }));
 

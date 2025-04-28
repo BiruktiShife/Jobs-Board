@@ -10,6 +10,7 @@ import bcrypt from "bcryptjs";
 
 interface CustomUser extends User {
   role: "ADMIN" | "JOB_SEEKER" | "COMPANY_ADMIN";
+  companyId?: string | null;
 }
 
 interface CustomSession extends Session {
@@ -18,12 +19,14 @@ interface CustomSession extends Session {
     name?: string | null;
     email?: string | null;
     role: "ADMIN" | "JOB_SEEKER" | "COMPANY_ADMIN";
+    companyId?: string | null;
   };
 }
 
 interface CustomJWT extends JWT {
   id: string;
   role: "ADMIN" | "JOB_SEEKER" | "COMPANY_ADMIN";
+  companyId?: string | null;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -69,6 +72,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           role: user.role,
+          companyId: user.companyId,
         } as CustomUser;
       },
     }),
@@ -147,6 +151,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.companyId = user.companyId;
       }
       return token;
     },
@@ -160,6 +165,7 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         session.user.id = token.id;
         session.user.role = token.role;
+        session.user.companyId = token.companyId;
       }
       return session;
     },

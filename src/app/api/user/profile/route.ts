@@ -1,14 +1,12 @@
-// src/app/api/user/profile/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
-import { writeFile } from "fs/promises";
-import path from "path";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session || !session.user.email) {
+    console.error("GET /api/user/profile: Unauthorized, no session or email");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -19,15 +17,20 @@ export async function GET() {
         name: true,
         email: true,
         image: true,
-        phone: true, // New field
-        studyArea: true, // New field
+        phone: true,
+        studyArea: true,
       },
     });
-    if (!user)
+    if (!user) {
+      console.error(
+        `GET /api/user/profile: User not found for email ${session.user.email}`
+      );
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    console.log("GET /api/user/profile: Fetched user:", user);
     return NextResponse.json(user);
   } catch (error) {
-    console.error("Error fetching user profile:", error);
+    console.error("GET /api/user/profile: Error fetching user profile:", error);
     return NextResponse.json(
       { error: "Failed to fetch profile" },
       { status: 500 }
@@ -38,57 +41,76 @@ export async function GET() {
 export async function PUT(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user.email) {
+    console.error("PUT /api/user/profile: Unauthorized, no session or email");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const formData = await request.formData();
-    const name = formData.get("name") as string;
-    const phone = formData.get("phone") as string;
-    const studyArea = formData.get("studyArea") as string;
-    const file = formData.get("profileImage") as File | null;
+    const { name, phone, studyArea, image } = await request.json();
+    console.log("PUT /api/user/profile: Request data:", {
+      name,
+      phone,
+      studyArea,
+      image,
+    });
 
-    let profileImageUrl = null;
-    if (file) {
-      const fileExtension = file.name.split(".").pop();
-      const fileName = `${session.user.email}-${Date.now()}.${fileExtension}`;
-      const filePath = path.join(process.cwd(), "public", fileName);
+    // Validate input
+    if (image && !isValidUrl(image)) {
+      console.error("PUT /api/user/profile: Invalid image URL:", image);
+      return NextResponse.json({ error: "Invalid image URL" }, { status: 400 });
+    }
 
-      const buffer = Buffer.from(await file.arrayBuffer());
-      await writeFile(filePath, buffer);
-
-      profileImageUrl = `/${fileName}`;
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+    if (!user) {
+      console.error(
+        `PUT /api/user/profile: User not found for email ${session.user.email}`
+      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     const updatedUser = await prisma.user.update({
       where: { email: session.user.email },
       data: {
         name: name || undefined,
-        phone: phone || undefined, // New field
-        studyArea: studyArea || undefined, // New field
-        image: profileImageUrl || undefined,
+        phone: phone || undefined,
+        studyArea: studyArea || undefined,
+        image: image || undefined,
       },
       select: {
         name: true,
         email: true,
         image: true,
-        phone: true, // New field
-        studyArea: true, // New field
+        phone: true,
+        studyArea: true,
       },
     });
 
+    console.log(
+      "PUT /api/user/profile: Profile updated successfully:",
+      updatedUser
+    );
+    console.log("PUT /api/user/profile: Stored image URL:", updatedUser.image);
     return NextResponse.json(updatedUser);
   } catch (error) {
-    console.error("Error updating profile:", error);
+    console.error("PUT /api/user/profile: Error updating profile:", error);
     return NextResponse.json(
-      { error: "Failed to update profile" },
+      {
+        error: "Failed to update profile",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
 }
 
-export const config = {
-  api: {
-    bodyParser: false, // Required for FormData handling
-  },
-};
+// Helper function to validate URLs
+function isValidUrl(url: string): boolean {
+  try {
+    new URL(url);
+    return url.startsWith("https://gateway.pinata.cloud/ipfs/");
+  } catch {
+    return false;
+  }
+}

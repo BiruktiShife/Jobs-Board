@@ -18,7 +18,7 @@ export async function GET() {
       include: {
         job: {
           include: {
-            company: true, // Include Company for name
+            company: true, // includes all company fields
           },
         },
       },
@@ -27,8 +27,9 @@ export async function GET() {
     const appliedJobs = applications.map((app) => ({
       id: app.id,
       title: app.job.title,
-      status: app.status || "Pending", // Safe now that status exists
-      company: app.job.company.name,
+      status: app.status || "Pending",
+      Company: app.job.company.name,
+      appliedOn: app.job.created_at.toISOString().split("T")[0],
     }));
 
     return NextResponse.json(appliedJobs, { status: 200 });

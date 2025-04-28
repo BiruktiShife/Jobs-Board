@@ -13,14 +13,12 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 
-// Define the schema
 const signupSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-// Infer the type from the schema
 type SignupData = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
@@ -35,7 +33,6 @@ export default function SignupPage() {
     setError(null);
 
     try {
-      // Default role is JOB_SEEKER
       const data: SignupData = { name, email, password };
 
       signupSchema.parse(data);
@@ -43,7 +40,7 @@ export default function SignupPage() {
       const response = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, role: "JOB_SEEKER" }), // Explicitly set role
+        body: JSON.stringify({ ...data, role: "JOB_SEEKER" }),
       });
 
       if (response.ok) {
@@ -108,7 +105,7 @@ export default function SignupPage() {
             />
             <Button
               type="submit"
-              className="flex items-center justify-between bg-green-600 hover:bg-green-700 w-full"
+              className="flex items-center justify-center bg-green-600 hover:bg-green-700 w-full"
             >
               Sign Up <BsArrowRight />
             </Button>

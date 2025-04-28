@@ -31,13 +31,14 @@ import {
   FaFileAlt,
   FaCalendar,
 } from "react-icons/fa";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { FiPlus } from "react-icons/fi";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { applicationSchema } from "../api/applications/route";
+import { applicationSchema } from "@/app/api/applications/route";
 import Link from "next/link";
 import { BsArrowLeft } from "react-icons/bs";
+import { motion } from "framer-motion";
 
 export default function ApplicationForm() {
   const [graduationDate, setGraduationDate] = useState<Date | undefined>(
@@ -61,10 +62,12 @@ export default function ApplicationForm() {
   const [institution, setInstitution] = useState("");
   const [projects, setProjects] = useState("");
   const [volunteerWork, setVolunteerWork] = useState("");
-  const [resumeUrl, setResumeUrl] = useState("");
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [hasApplied, setHasApplied] = useState<boolean>(false);
   const [isCheckingApplication, setIsCheckingApplication] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
 
   const searchParams = useSearchParams();
   const jobId = searchParams.get("jobId");
@@ -167,9 +170,18 @@ export default function ApplicationForm() {
     ]);
   };
 
+  const handleResumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setResumeFile(file);
+      setError(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
 
     if (!session || session.user.role !== "JOB_SEEKER") {
       setError("You must be logged in as a Job Seeker to apply.");
@@ -187,6 +199,11 @@ export default function ApplicationForm() {
       return;
     }
 
+    if (!resumeFile) {
+      setError("Please upload a resume (PDF).");
+      return;
+    }
+
     const validExperiences = experiences.filter(
       (exp) =>
         exp.jobTitle.trim() &&
@@ -198,6 +215,47 @@ export default function ApplicationForm() {
     if (validExperiences.length === 0) {
       setError("At least one valid work experience is required.");
       return;
+    }
+
+    let resumeUrl = "";
+    if (resumeFile) {
+      setIsUploading(true);
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          console.log("Pinata resume upload attempt:", attempt);
+          const formData = new FormData();
+          formData.append("file", resumeFile);
+          const response = await fetch("/api/pinata/upload?type=resume", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.message || "Failed to upload resume");
+          }
+
+          resumeUrl = data.url;
+          console.log("Pinata resume upload success:", resumeUrl);
+          break;
+        } catch (err) {
+          console.error(
+            "Pinata resume upload error (attempt",
+            attempt,
+            "):",
+            err
+          );
+          if (attempt === 3) {
+            setError(
+              "Failed to upload resume after multiple attempts. Please try again."
+            );
+            setIsUploading(false);
+            return;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+      setIsUploading(false);
     }
 
     const formData = {
@@ -237,15 +295,17 @@ export default function ApplicationForm() {
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 409) {
-          setHasApplied(true); // Update state to reflect duplicate
+          setHasApplied(true);
           throw new Error("You have already applied to this job");
         }
         throw new Error(errorData.error || "Failed to submit application");
       }
 
-      alert("Applied successfully!🎉🎉");
-      setHasApplied(true); // Prevent further submissions
-      router.push("/dashboard");
+      setSuccess("Application submitted successfully!🎉");
+      setHasApplied(true);
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 2000);
     } catch (err) {
       const errorMessage =
         err instanceof Error
@@ -285,7 +345,26 @@ export default function ApplicationForm() {
           </p>
         ) : (
           <>
-            {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center text-sm text-red-700 bg-red-100 p-3 rounded-md shadow-sm mb-4"
+              >
+                <AlertCircle className="w-5 h-5 mr-2" />
+                {error}
+              </motion.div>
+            )}
+            {success && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center text-sm text-green-700 bg-green-100 p-3 rounded-md shadow-sm mb-4"
+              >
+                <CheckCircle2 className="w-5 h-5 mr-2" />
+                {success}
+              </motion.div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
@@ -705,20 +784,30 @@ export default function ApplicationForm() {
                 <Input
                   type="file"
                   id="resume"
-                  onChange={(e) =>
-                    setResumeUrl(e.target.files?.[0]?.name || "")
-                  }
+                  accept="application/pdf"
+                  onChange={handleResumeChange}
                   className="w-full"
+                  required
                 />
+                {isUploading && (
+                  <div className="flex items-center mt-2">
+                    <Loader2 className="w-5 h-5 animate-spin text-green-600 mr-2" />
+                    <span>Uploading resume...</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end">
                 <Button
                   type="submit"
                   className="bg-green-600 hover:bg-green-700"
-                  disabled={hasApplied}
+                  disabled={hasApplied || isUploading}
                 >
-                  {hasApplied ? "Already Applied" : "Submit Application"}
+                  {hasApplied
+                    ? "Already Applied"
+                    : isUploading
+                    ? "Uploading..."
+                    : "Submit Application"}
                 </Button>
               </div>
             </form>

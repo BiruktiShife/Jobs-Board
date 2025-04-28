@@ -12,13 +12,15 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { CategoryCard } from "@/utils/CategoryCard";
 import { Button } from "./ui/button";
-import Image from "next/image";
 import { Input } from "./ui/input";
+import { Skeleton } from "./ui/skeleton";
+import Image from "next/image";
 
 type Category = {
   icon: React.ReactNode;
   title: string;
 };
+
 interface Job {
   id: string;
   title: string;
@@ -34,6 +36,27 @@ interface Job {
   requiredSkills: string[];
 }
 
+const JobCardSkeleton = () => {
+  return (
+    <div className="p-6 border rounded-lg shadow-sm bg-white">
+      <div className="flex items-center gap-4">
+        <Skeleton className="w-12 h-12 rounded-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-[200px]" />
+          <Skeleton className="h-4 w-[150px]" />
+        </div>
+      </div>
+      <Skeleton className="h-4 w-[250px] mt-4" />
+      <Skeleton className="h-4 w-[200px] mt-2" />
+      <div className="mt-4 space-y-2">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-3/4" />
+      </div>
+      <Skeleton className="h-10 w-[100px] mt-4" />
+    </div>
+  );
+};
+
 export function HomeSection() {
   const categories: Category[] = [
     { icon: <FaLaptopCode className="w-6 h-6" />, title: "Programming" },
@@ -48,9 +71,83 @@ export function HomeSection() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await fetch("/api/jobs");
+        if (!response.ok) {
+          throw new Error("Failed to fetch jobs");
+        }
+        const data = await response.json();
+        setJobs(data);
+        setFilteredJobs(data);
+        setLoading(false);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load jobs");
+        setLoading(false);
+      }
+    };
+    fetchJobs();
+  }, []);
+
+  useEffect(() => {
+    let filtered = selectedCategory
+      ? jobs.filter(
+          (job) => job.area.toLowerCase() === selectedCategory.toLowerCase()
+        )
+      : jobs;
+
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (job) =>
+          job.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          job.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    setFilteredJobs(filtered);
+  }, [searchQuery, jobs, selectedCategory]);
+
+  const handleCategoryClick = async (category: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      setSelectedCategory(category);
+
+      const response = await fetch(
+        `/api/jobs/catagory?area=${encodeURIComponent(category)}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch jobs for category");
+      }
+      const data = await response.json();
+      setJobs(data); // Update jobs to reflect category-specific data
+      setFilteredJobs(
+        searchQuery
+          ? data.filter(
+              (job: Job) =>
+                job.company_name
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase()) ||
+                job.title.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+          : data
+      );
+      setLoading(false);
+    } catch (err) {
+      console.error("Error:", err);
+      setError(`Failed to load jobs for ${category}`);
+      setLoading(false);
+    }
+  };
 
   const handleNext = () => {
     if (currentIndex < categories.length - 3) {
@@ -64,49 +161,21 @@ export function HomeSection() {
     }
   };
 
-  useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        const response = await fetch("/api/jobs");
-        if (!response.ok) {
-          throw new Error("Failed to fetch jobs");
-        }
-        const data = await response.json();
-        setFilteredJobs(data);
-        setLoading(false);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load jobs");
-        setLoading(false);
-      }
-    };
-    fetchJobs();
-  }, []);
+  const handleSearch = () => {
+    const filtered = selectedCategory
+      ? jobs.filter(
+          (job) => job.area.toLowerCase() === selectedCategory.toLowerCase()
+        )
+      : jobs;
 
-  const handleCategoryClick = async (category: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await fetch(
-        `/api/jobs/catagory?area=${encodeURIComponent(category)}`
-      );
-      console.log("Response status:", response.status);
-      if (!response.ok) {
-        throw new Error("Failed to fetch jobs for category");
-      }
-      const data = await response.json();
-      console.log("Fetched jobs:", data);
-      setFilteredJobs(data);
-      setLoading(false);
-    } catch (err) {
-      console.error("Error:", err);
-      setError(`Failed to load jobs for ${category}`);
-      setLoading(false);
-    }
+    setFilteredJobs(
+      filtered.filter(
+        (job) =>
+          job.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          job.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
   };
-
-  if (loading) return <p>Loading job details...</p>;
-  if (error) return <p className="text-red-500">{error}</p>;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -127,14 +196,33 @@ export function HomeSection() {
           <p className="text-2xl text-gray-600 mb-8">
             Join thousands of candidates and employers on JobBoard.
           </p>
-          <div className="w-full max-w-2xl">
-            <div className="flex items-center bg-white shadow-md rounded-lg p-4 gap-3 w-full max-w-xl">
+          <div className="w-full max-w-2xl mx-auto">
+            <div className="relative flex items-center bg-white p-2 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+              <svg
+                className="w-6 h-6 text-gray-400 ml-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
               <Input
                 type="text"
-                placeholder="Search for jobs..."
-                className="flex-grow border border-gray-300 focus:border-green-600 focus:ring-2 focus:ring-green-600 rounded-lg px-4 py-2 text-gray-700"
+                placeholder="Search by company name or job title..."
+                className="flex-grow border-none py-3 px-4 text-gray-700 placeholder-gray-400 focus-outline-none focus:ring-0"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
               />
-              <Button className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition">
+              <Button
+                className="bg-green-600 text-white hover:bg-green-700 px-6 py-2 rounded-md whitespace-nowrap transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                onClick={handleSearch}
+              >
                 Search
               </Button>
             </div>
@@ -188,14 +276,24 @@ export function HomeSection() {
 
       <section className="container mx-auto px-6 py-12">
         <h2 className="text-3xl font-bold text-center mb-8">Jobs</h2>
-        {!loading && !error && filteredJobs.length > 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {[...Array(4)].map((_, index) => (
+              <JobCardSkeleton key={index} />
+            ))}
+          </div>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : filteredJobs.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filteredJobs.map((job) => (
               <JobCard key={job.id} jobData={job} />
             ))}
           </div>
         ) : (
-          !loading && !error && <p>No jobs found for this category.</p>
+          <p className="text-center text-gray-500">
+            No jobs found matching your search or category.
+          </p>
         )}
       </section>
     </div>
