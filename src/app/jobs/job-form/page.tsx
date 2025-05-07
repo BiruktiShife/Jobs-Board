@@ -141,9 +141,9 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8">
-      <Card className="max-w-3xl mx-auto shadow-lg border-0">
-        <CardHeader className="bg-green-50 rounded-t-lg border-b border-green-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-4 sm:py-8">
+      <Card className="w-full sm:max-w-3xl mx-auto shadow-lg border-0">
+        <CardHeader className="bg-green-50 rounded-t-lg border-b border-green-100 p-2 sm:p-3">
           <div className="flex items-center">
             <Button
               variant="ghost"
@@ -152,48 +152,48 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
               asChild
             >
               <Link href="/admin">
-                <BsArrowLeft className="h-5 w-5" />
+                <BsArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               </Link>
             </Button>
-            <CardTitle className="text-2xl font-bold text-green-800 flex items-center p-3">
-              <Briefcase className="h-6 w-6 mr-3 text-green-600" />
+            <CardTitle className="text-xl sm:text-2xl font-bold text-green-800 flex items-center">
+              <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 mr-3 text-green-600" />
               Create Job Posting
             </CardTitle>
           </div>
         </CardHeader>
 
-        <CardContent className="p-8">
+        <CardContent className="p-4 sm:p-8">
           <form onSubmit={handleSubmit}>
-            <div className="flex justify-center mb-8">
+            <div className="flex justify-center mb-6 sm:mb-8">
               <div className="flex items-center">
                 <div
-                  className={`flex items-center px-4 py-1 rounded-full ${
+                  className={`flex items-center px-3 sm:px-4 py-0.5 sm:py-1 rounded-full text-sm sm:text-base ${
                     step === 1
                       ? "bg-green-600 text-white"
                       : "bg-green-100 text-green-800"
                   }`}
                 >
                   {step === 1 ? (
-                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                   ) : (
-                    <span className="w-4 h-4 mr-2 rounded-full bg-green-600 text-white text-xs flex items-center justify-center">
+                    <span className="w-3 h-3 sm:w-4 sm:h-4 mr-2 rounded-full bg-green-600 text-white text-[10px] sm:text-xs flex items-center justify-center">
                       1
                     </span>
                   )}
                   Basic Information
                 </div>
-                <div className="w-16 h-px bg-gray-300 mx-2"></div>
+                <div className="w-8 sm:w-16 h-px bg-gray-300 mx-2"></div>
                 <div
-                  className={`flex items-center px-4 py-1 rounded-full ${
+                  className={`flex items-center px-3 sm:px-4 py-0.5 sm:py-1 rounded-full text-sm sm:text-base ${
                     step === 2
                       ? "bg-green-600 text-white"
                       : "bg-green-100 text-green-800"
                   }`}
                 >
                   {step === 2 ? (
-                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                   ) : (
-                    <span className="w-4 h-4 mr-2 rounded-full bg-green-600 text-white text-xs flex items-center justify-center">
+                    <span className="w-3 h-3 sm:w-4 sm:h-4 mr-2 rounded-full bg-green-600 text-white text-[10px] sm:text-xs flex items-center justify-center">
                       2
                     </span>
                   )}
@@ -203,13 +203,13 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
             </div>
 
             {step === 1 && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
                   <Label
                     htmlFor="title"
-                    className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700"
+                    className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700 text-sm sm:text-base"
                   >
-                    <Briefcase className="h-5 w-5 text-green-600" />
+                    <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                     Job Title
                   </Label>
                   <Input
@@ -226,9 +226,9 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                 <div>
                   <Label
                     htmlFor="companyId"
-                    className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700"
+                    className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700 text-sm sm:text-base"
                   >
-                    <FaBuilding className="h-5 w-5 text-green-600" />
+                    <FaBuilding className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                     Company
                   </Label>
                   <Select
@@ -255,13 +255,13 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <Label
                       htmlFor="area"
-                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700"
+                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700 text-sm sm:text-base"
                     >
-                      <Building2 className="h-5 w-5 text-green-600" />
+                      <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                       Industry Area
                     </Label>
                     <Select
@@ -291,9 +291,9 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                   <div>
                     <Label
                       htmlFor="location"
-                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700"
+                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700 text-sm sm:text-base"
                     >
-                      <MapPin className="h-5 w-5 text-green-600" />
+                      <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                       Location
                     </Label>
                     <Input
@@ -309,9 +309,9 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                   <div>
                     <Label
                       htmlFor="deadline"
-                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700"
+                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700 text-sm sm:text-base"
                     >
-                      <CalendarDays className="h-5 w-5 text-green-600" />
+                      <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                       Deadline
                     </Label>
                     <Input
@@ -327,9 +327,9 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                   <div>
                     <Label
                       htmlFor="site"
-                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700"
+                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700 text-sm sm:text-base"
                     >
-                      <Globe className="h-5 w-5 text-green-600" />
+                      <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                       Employment Type
                     </Label>
                     <Select
@@ -371,9 +371,9 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                 <div>
                   <Label
                     htmlFor="about_job"
-                    className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700"
+                    className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700 text-sm sm:text-base"
                   >
-                    <Info className="h-5 w-5 text-green-600" />
+                    <Info className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                     About the Job
                   </Label>
                   <Textarea
@@ -381,8 +381,8 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                     name="about_job"
                     value={job.about_job}
                     onChange={handleTextArea}
-                    rows={5}
-                    className="focus-visible:ring-green-500"
+                    rows={4}
+                    className="focus-visible:ring-green-500 h-32 sm:h-40"
                     placeholder="Describe the job responsibilities, company culture, and other relevant details..."
                     required
                   />
@@ -401,7 +401,7 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
             )}
 
             {step === 2 && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {(
                   [
                     "qualifications",
@@ -411,13 +411,13 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                 ).map((field) => {
                   const icons = {
                     qualifications: (
-                      <BadgeCheck className="h-5 w-5 text-green-600" />
+                      <BadgeCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                     ),
                     responsibilities: (
-                      <ListTodo className="h-5 w-5 text-green-600" />
+                      <ListTodo className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                     ),
                     requiredSkills: (
-                      <Wrench className="h-5 w-5 text-green-600" />
+                      <Wrench className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                     ),
                   };
 
@@ -430,12 +430,12 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                   return (
                     <Card key={field} className="border border-gray-200">
                       <CardHeader className="bg-gray-50 border-b border-gray-200 p-2">
-                        <CardTitle className="flex items-center gap-3 text-lg font-semibold text-gray-800">
+                        <CardTitle className="flex items-center gap-3 text-base sm:text-lg font-semibold text-gray-800">
                           {icons[field]}
                           {titles[field]}
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="p-6">
+                      <CardContent className="p-4 sm:p-6">
                         <div className="space-y-3">
                           {(job[field] as string[]).map((item, index) => (
                             <div
@@ -451,7 +451,7 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                                   newValues[index] = e.target.value;
                                   setJob({ ...job, [field]: newValues });
                                 }}
-                                className="flex-1 focus-visible:ring-green-500"
+                                className="flex-1 focus-visible:ring-green-500 px-2 sm:px-3 py-1 sm:py-2"
                                 placeholder={`Enter ${titles[
                                   field
                                 ].toLowerCase()}`}
@@ -461,7 +461,7 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                  className="text-red-500 hover:text-red-600 hover:bg-red-50 h-8 w-8 sm:h-10 sm:w-10"
                                   onClick={() => removeField(field, index)}
                                   type="button"
                                 >
@@ -474,10 +474,10 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                         <Button
                           variant="outline"
                           type="button"
-                          className="mt-4 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border-green-200 flex items-center"
+                          className="mt-4 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border-green-200 w-full sm:w-auto flex items-center text-sm sm:text-base"
                           onClick={() => addField(field)}
                         >
-                          <BsPlus className="h-5 w-5 mr-2" />
+                          <BsPlus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                           Add {titles[field].toLowerCase()}
                         </Button>
                       </CardContent>

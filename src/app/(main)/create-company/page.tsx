@@ -12,8 +12,8 @@ import {
   Building2,
   Image as ImageIcon,
   Info,
-  Mail,
-  Lock,
+  // Mail,
+  // Lock,
   CheckCircle2,
   AlertCircle,
   UserCog,
@@ -118,24 +118,24 @@ export default function CreateCompanyPage() {
         className="max-w-2xl mx-auto"
       >
         <Card className="shadow-2xl rounded-2xl overflow-hidden border border-gray-200 bg-white">
-          <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white p-8">
+          <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white p-4 sm:p-8">
             <div className="flex items-center justify-between">
               <Link
-                href="/dashboard/admin"
+                href="/admin"
                 className="text-white hover:text-blue-200 transition-colors duration-200"
               >
-                <BsArrowLeft className="w-6 h-6" />
+                <BsArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
               </Link>
-              <div className="text-center">
-                <CardTitle className="text-2xl font-semibold flex items-center justify-center gap-2">
-                  <Building2 className="w-6 h-6" />
+              <div className="flex flex-col items-center text-center">
+                <CardTitle className="text-xl sm:text-2xl font-semibold flex items-center justify-center gap-1 sm:gap-2">
+                  <Building2 className="w-5 h-5 sm:w-6 sm:h-6" />
                   Create New Company
                 </CardTitle>
-                <p className="text-blue-100 text-sm mt-2 font-light">
-                  Set up a new company profile and admin account
+                <p className="text-blue-100 text-xs sm:text-sm mt-1 sm:mt-2 font-light">
+                  Set up a new company profile
                 </p>
               </div>
-              <div className="w-6" />
+              <div className="sm:w-6" />
             </div>
           </CardHeader>
 
@@ -227,7 +227,7 @@ export default function CreateCompanyPage() {
                   />
                 </div>
 
-                <div className="pt-6 border-t border-gray-200">
+                {/* <div className="pt-6 border-t border-gray-200">
                   <h3 className="flex items-center justify-center gap-2 text-lg font-semibold text-gray-800 mb-6">
                     <UserCog className="w-5 h-5 text-green-600" />
                     Admin Account Details
@@ -264,7 +264,7 @@ export default function CreateCompanyPage() {
                       />
                     </div>
                   </div>
-                </div>
+                </div> */}
               </div>
 
               <Button
@@ -276,16 +276,6 @@ export default function CreateCompanyPage() {
                 <BsArrowRight className="w-5 h-5" />
               </Button>
             </form>
-
-            <div className="mt-6 text-center">
-              <Link
-                href="/dashboard/admin"
-                className="text-sm text-green-600 hover:text-green-700 hover:underline flex items-center justify-center gap-1 transition-all duration-200"
-              >
-                <BsArrowLeft className="w-4 h-4" />
-                Back to Admin Dashboard
-              </Link>
-            </div>
           </CardContent>
         </Card>
       </motion.div>

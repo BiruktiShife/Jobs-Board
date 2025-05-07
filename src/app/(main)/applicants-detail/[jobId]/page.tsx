@@ -22,6 +22,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   FilterIcon,
   SearchIcon,
   Loader2,
@@ -83,6 +90,7 @@ export default function ApplicantDetails() {
     null
   );
   const [degreeTypeFilter, setDegreeTypeFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,14 +102,19 @@ export default function ApplicantDetails() {
     "Junior Level(1-3 years)",
   ];
 
-  const updateApplicationStatus = async (applicationId: string) => {
+  const statusOptions = ["Pending", "Reviewed", "Accepted", "Rejected"];
+
+  const updateApplicationStatus = async (
+    applicationId: string,
+    newStatus: string
+  ) => {
     try {
       const response = await fetch(
         `/api/applications/${applicationId}/status`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "Reviewed" }),
+          body: JSON.stringify({ status: newStatus }),
         }
       );
 
@@ -109,12 +122,12 @@ export default function ApplicantDetails() {
 
       setFilteredApplicants((prev) =>
         prev.map((app) =>
-          app.id === applicationId ? { ...app, status: "Reviewed" } : app
+          app.id === applicationId ? { ...app, status: newStatus } : app
         )
       );
 
       toast.success("Status Updated", {
-        description: "Applicant status has been updated to Reviewed.",
+        description: `Applicant status has been updated to ${newStatus}.`,
       });
     } catch (error) {
       console.error("Error updating status:", error);
@@ -170,8 +183,13 @@ export default function ApplicantDetails() {
         (app) => app.degreeType.toLowerCase() === degreeTypeFilter.toLowerCase()
       );
     }
+    if (statusFilter) {
+      applicants = applicants.filter(
+        (app) => (app.status || "Pending") === statusFilter
+      );
+    }
     setFilteredApplicants(applicants);
-  }, [job, searchQuery, careerLevelFilter, degreeTypeFilter]);
+  }, [job, searchQuery, careerLevelFilter, degreeTypeFilter, statusFilter]);
 
   if (loading) {
     return (
@@ -190,10 +208,10 @@ export default function ApplicantDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 p-6">
-      <div className="max-w-screen-2xl mx-auto space-y-6">
-        <header className="flex items-center justify-between">
-          <div className="flex items-center">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 p-4 sm:p-6">
+      <div className="w-full max-w-screen-2xl mx-auto space-y-6">
+        <header className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center w-full sm:w-auto">
             <Button
               variant="outline"
               className="bg-green-600 text-white hover:bg-green-700 hover:text-white mr-4"
@@ -201,8 +219,8 @@ export default function ApplicantDetails() {
             >
               <BsArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-3xl font-bold text-green-800 flex items-center">
-              <BriefcaseIcon className="h-8 w-8 mr-3 text-green-600" />
+            <h1 className="text-2xl sm:text-1xl font-bold text-green-800 flex items-center">
+              <BriefcaseIcon className="h-9 w-9 sm:h-8 sm:w-8 mr-3 text-green-600" />
               Applicants for {job?.title || "Job"}
             </h1>
           </div>
@@ -210,14 +228,14 @@ export default function ApplicantDetails() {
 
         <Card className="w-full shadow-lg hover:shadow-xl transition-shadow border border-green-100">
           <CardHeader className="bg-green-50 rounded-t-lg">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-xl font-semibold text-green-800 flex items-center p-3">
-                <UserIcon className="h-5 w-5 mr-2" />
+            <div className="flex flex-col sm:flex-row justify-between items-center">
+              <CardTitle className="text-lg sm:text-xl font-semibold text-green-800 flex items-center p-3">
+                <UserIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 Applicants {filteredApplicants.length}
               </CardTitle>
               <div className="flex items-center space-x-2">
                 {filteredApplicants.length > 0 && (
-                  <div className="text-green-800">
+                  <div className="text-green-800 text-sm sm:text-base">
                     Showing {filteredApplicants.length} of{" "}
                     {job?.applications.length}
                   </div>
@@ -225,29 +243,29 @@ export default function ApplicantDetails() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0 mb-6">
-              <div className="relative flex-1">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-x-4 md:space-y-0 mb-6">
+              <div className="relative w-full md:flex-1">
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Search by name or email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 w-full"
                 />
               </div>
-              <div className="flex space-x-2">
+              <div className="flex flex-wrap gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="outline"
-                      className="flex items-center gap-2 bg-white hover:bg-gray-50"
+                      className="flex items-center gap-2 bg-white hover:bg-gray-50 px-2 sm:px-4 py-1 sm:py-2"
                     >
                       <FilterIcon className="h-4 w-4 text-green-600" />
-                      <span>Career Level</span>
+                      <span className="text-sm sm:text-base">Career Level</span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-64">
+                  <DropdownMenuContent className="w-56 max-h-64 overflow-y-auto">
                     <DropdownMenuLabel className="flex items-center">
                       <BriefcaseIcon className="h-4 w-4 mr-2" />
                       Career Level
@@ -274,13 +292,13 @@ export default function ApplicantDetails() {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="outline"
-                      className="flex items-center gap-2 bg-white hover:bg-gray-50"
+                      className="flex items-center gap-2 bg-white hover:bg-gray-50 px-2 sm:px-4 py-1 sm:py-2"
                     >
                       <FilterIcon className="h-4 w-4 text-green-600" />
-                      <span>Degree Type</span>
+                      <span className="text-sm sm:text-base">Degree Type</span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-64 max-h-96 overflow-y-auto">
+                  <DropdownMenuContent className="w-56 max-h-64 overflow-y-auto">
                     <DropdownMenuLabel className="flex items-center">
                       <GraduationCapIcon className="h-4 w-4 mr-2" />
                       Degree Type
@@ -307,70 +325,119 @@ export default function ApplicantDetails() {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="flex items-center gap-2 bg-white hover:bg-gray-50 px-2 sm:px-4 py-1 sm:py-2"
+                    >
+                      <FilterIcon className="h-4 w-4 text-green-600" />
+                      <span className="text-sm sm:text-base">Status</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 max-h-64 overflow-y-auto">
+                    <DropdownMenuLabel className="flex items-center">
+                      <CheckCircleIcon className="h-4 w-4 mr-2" />
+                      Status
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setStatusFilter(null)}
+                      className="flex items-center"
+                    >
+                      <span className="mr-2">All</span>
+                    </DropdownMenuItem>
+                    {statusOptions.map((status) => (
+                      <DropdownMenuItem
+                        key={status}
+                        onClick={() => setStatusFilter(status)}
+                        className="flex items-center"
+                      >
+                        <span
+                          className={`mr-2 truncate ${
+                            status === "Accepted"
+                              ? "text-green-600"
+                              : status === "Rejected"
+                              ? "text-red-600"
+                              : status === "Reviewed"
+                              ? "text-blue-600"
+                              : "text-gray-600"
+                          }`}
+                        >
+                          {status}
+                        </span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
             {filteredApplicants.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="mx-auto w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                  <UserIcon className="h-12 w-12 text-gray-400" />
+              <div className="text-center py-8 sm:py-12">
+                <div className="mx-auto w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                  <UserIcon className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">
                   No applicants found
                 </h3>
-                <p className="mt-2 text-gray-500">
-                  {searchQuery || careerLevelFilter || degreeTypeFilter
+                <p className="mt-2 text-sm sm:text-base text-gray-500">
+                  {searchQuery ||
+                  careerLevelFilter ||
+                  degreeTypeFilter ||
+                  statusFilter
                     ? "Try adjusting your filters or search query"
                     : "No applicants have applied for this position yet"}
                 </p>
                 <Button
                   variant="ghost"
-                  className="mt-4 text-green-600 hover:text-green-700"
+                  className="mt-4 text-green-600 hover:text-green-700 w-full sm:w-auto"
                   onClick={() => {
                     setSearchQuery("");
                     setCareerLevelFilter(null);
                     setDegreeTypeFilter(null);
+                    setStatusFilter(null);
                   }}
                 >
                   Clear filters
                 </Button>
               </div>
             ) : (
-              <div className="w-full rounded-lg border border-gray-200 overflow-hidden">
+              <div className="w-full rounded-lg border border-gray-200 overflow-x-auto">
                 <Table className="min-w-full table-auto">
                   <TableHeader className="bg-gray-50">
                     <TableRow>
-                      <TableHead className="min-w-[100px]">
+                      <TableHead className="min-w-[80px] sm:min-w-[100px] text-sm sm:text-base p-2 sm:p-4">
                         <span className="inline-flex items-center">
                           <UserIcon className="h-4 w-4 mr-2 text-green-600" />
                           Name
                         </span>
                       </TableHead>
-                      <TableHead>
+                      <TableHead className="text-sm sm:text-base p-2 sm:p-4">
                         <span className="inline-flex items-center">
                           <MailIcon className="h-4 w-4 mr-2 text-green-600" />
                           Email
                         </span>
                       </TableHead>
-                      <TableHead>
+                      <TableHead className="text-sm sm:text-base p-2 sm:p-4">
                         <span className="inline-flex items-center">
                           <BriefcaseIcon className="h-4 w-4 mr-2 text-green-600" />
                           Career Level
                         </span>
                       </TableHead>
-                      <TableHead>
+                      <TableHead className="text-sm sm:text-base p-2 sm:p-4">
                         <span className="inline-flex items-center">
                           <GraduationCapIcon className="h-4 w-4 mr-2 text-green-600" />
                           Degree
                         </span>
                       </TableHead>
-                      <TableHead>
+                      <TableHead className="text-sm sm:text-base p-2 sm:p-4">
                         <span className="inline-flex items-center">
                           <CalendarIcon className="h-4 w-4 mr-2 text-green-600" />
                           Applied On
                         </span>
                       </TableHead>
-                      <TableHead>
+                      <TableHead className="text-sm sm:text-base p-2 sm:p-4">
                         <span className="inline-flex items-center">
                           <CheckCircleIcon className="h-4 w-4 mr-2 text-green-600" />
                           Status
@@ -384,23 +451,20 @@ export default function ApplicantDetails() {
                         key={applicant.id}
                         className="cursor-pointer hover:bg-green-50"
                         onClick={() => {
-                          if (applicant.status !== "Reviewed") {
-                            updateApplicationStatus(applicant.id);
-                          }
                           router.push(
                             `/applicant/${applicant.id}?jobId=${jobId}`
                           );
                         }}
                       >
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium text-sm sm:text-base p-2 sm:p-4">
                           <div className="flex items-center">
-                            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-3">
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-green-100 flex items-center justify-center mr-2 sm:mr-3">
                               <UserIcon className="h-4 w-4 text-green-600" />
                             </div>
                             {applicant.fullName}
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-sm sm:text-base p-2 sm:p-4">
                           <a
                             href={`mailto:${applicant.email}`}
                             className="text-blue-600 hover:underline flex items-center"
@@ -409,30 +473,55 @@ export default function ApplicantDetails() {
                             {applicant.email}
                           </a>
                         </TableCell>
-                        <TableCell>
-                          <div className="bg-purple-50 text-purple-800 border-purpl-200 p-1 rounded-md">
+                        <TableCell className="text-sm sm:text-base p-2 sm:p-4">
+                          <div className="bg-purple-50 text-purple-800 border-purple-200 px-2 py-1 rounded-md">
                             {applicant.careerLevel}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="bg-green-50 text-green-800 border-green-200 p-1 rounded-md">
+                        <TableCell className="text-sm sm:text-base p-2 sm:p-4">
+                          <div className="bg-green-50 text-green-800 border-green-200 px-2 py-1 rounded-md">
                             {applicant.degreeType}
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-sm sm:text-base p-2 sm:p-4">
                           <div className="flex items-center">
                             <CalendarIcon className="h-4 w-4 mr-2 text-gray-500" />
                             {new Date(applicant.createdAt).toLocaleDateString()}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          {applicant.status === "Reviewed" ? (
-                            <div className="text-green-800 flex items-center">
-                              Reviewed
-                            </div>
-                          ) : (
-                            <div className="text-gray-600">Pending</div>
-                          )}
+                        <TableCell
+                          className="p-2 sm:p-4"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Select
+                            value={applicant.status || "Pending"}
+                            onValueChange={(value) =>
+                              updateApplicationStatus(applicant.id, value)
+                            }
+                          >
+                            <SelectTrigger className="w-[100px] sm:w-[120px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-64 overflow-y-auto">
+                              {statusOptions.map((status) => (
+                                <SelectItem key={status} value={status}>
+                                  <div
+                                    className={`flex items-center ${
+                                      status === "Accepted"
+                                        ? "text-green-600 px-2 py-1 rounded-md bg-green-200"
+                                        : status === "Rejected"
+                                        ? "text-red-600 px-2 py-1 rounded-md bg-red-200"
+                                        : status === "Reviewed"
+                                        ? "text-blue-600 px-2 py-1 rounded-md bg-blue-200"
+                                        : "text-gray-600 px-2 py-1 rounded-md bg-gray-200"
+                                    }`}
+                                  >
+                                    {status}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                       </TableRow>
                     ))}

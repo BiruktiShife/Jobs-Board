@@ -74,13 +74,15 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <Card className="w-[400px] p-6">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
+      <Card className="w-full max-w-sm sm:max-w-md p-4 sm:p-6">
         <CardHeader>
-          <CardTitle className="text-xl text-center">Create Account</CardTitle>
+          <CardTitle className="text-lg sm:text-xl text-center">
+            Create Account
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {error && <p className="text-red-500 text-center">{error}</p>}
+          {error && <p className="text-red-500 text-center text-sm">{error}</p>}
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
               type="text"
@@ -88,6 +90,7 @@ export default function SignupPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              className="w-full"
             />
             <Input
               type="email"
@@ -95,6 +98,7 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="w-full"
             />
             <Input
               type="password"
@@ -102,6 +106,7 @@ export default function SignupPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              className="w-full"
             />
             <Button
               type="submit"
@@ -111,7 +116,7 @@ export default function SignupPage() {
             </Button>
           </form>
           <div className="my-4 text-center text-sm">Or continue with</div>
-          <div className="flex gap-3 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <SocialButton
               icon={<AiOutlineGoogle size={20} className="text-blue-500" />}
               label="Google"

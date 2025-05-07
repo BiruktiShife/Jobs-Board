@@ -5,9 +5,10 @@ import { authOptions } from "../../../auth/[...nextauth]/route";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { applicationId: string } }
+  context: { params: Promise<{ applicationId: string }> }
 ) {
   const session = await getServerSession(authOptions);
+  const params = await context.params;
   const { applicationId } = params;
 
   if (!session || session.user.role !== "COMPANY_ADMIN") {

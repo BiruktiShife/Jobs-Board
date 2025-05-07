@@ -28,9 +28,10 @@ interface Job {
 
 interface JobCardProps {
   jobData?: Job;
+  className?: string;
 }
 
-export default function JobCard({ jobData }: JobCardProps) {
+export default function JobCard({ jobData, className }: JobCardProps) {
   const [job, setJob] = useState<Job | null>(jobData || null);
   const [loading, setLoading] = useState(!jobData);
   const [error, setError] = useState<string | null>(null);
@@ -104,15 +105,17 @@ export default function JobCard({ jobData }: JobCardProps) {
     }
   };
 
-  if (loading) return <p>Loading job details...</p>;
-  if (error) return <p className="text-red-500">{error}</p>;
+  if (loading)
+    return <p className="text-xs sm:text-base">Loading job details...</p>;
+  if (error)
+    return <p className="text-red-500 text-xs sm:text-base">{error}</p>;
   if (!job) return null;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-4">
-          <div className="w-16 h-16 overflow-hidden rounded-full">
+    <Card className={`p-3 sm:p-4 text-xs sm:text-base ${className}`}>
+      <CardHeader className="p-1 sm:p-2">
+        <CardTitle className="flex items-center gap-3 sm:gap-4">
+          <div className="w-12 sm:w-16 h-12 sm:h-16 overflow-hidden rounded-full">
             <Image
               src={job.logo || "/logo.png"}
               alt={`${job.company_name} Logo`}
@@ -122,14 +125,14 @@ export default function JobCard({ jobData }: JobCardProps) {
             />
           </div>
           <div className="flex-1">
-            <span className="text-2xl font-bold text-gray-900">
+            <span className="text-lg sm:text-2xl font-bold text-gray-900">
               {job.company_name}
             </span>
-            <div className="text-sm text-gray-500">{job.area}</div>
+            <div className="text-xs sm:text-sm text-gray-500">{job.area}</div>
           </div>
           <button onClick={handleBookmarkToggle} className="focus:outline-none">
             <FiBookmark
-              className={`w-6 h-6 ${
+              className={`w-5 sm:w-6 h-5 sm:h-6 ${
                 isBookmarked
                   ? "text-yellow-500 fill-yellow-500"
                   : "text-gray-500"
@@ -138,35 +141,39 @@ export default function JobCard({ jobData }: JobCardProps) {
           </button>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="flex flex-col space-y-2 mb-4">
-          <h1 className="font-bold text-2xl">{job.title}</h1>
-          <div className="flex items-center space-x-2">
-            <FaMapMarkerAlt className="text-purple-600 w-5 h-5" />
-            <span>{job.location}</span>
+      <CardContent className="p-1 sm:p-2">
+        <div className="flex flex-col space-y-1 sm:space-y-2 mb-3 sm:mb-4">
+          <h1 className="font-bold text-lg sm:text-2xl">{job.title}</h1>
+          <div className="flex items-center space-x-1 sm:space-x-2">
+            <FaMapMarkerAlt className="text-purple-600 w-4 sm:w-5 h-4 sm:h-5" />
+            <span className="text-xs sm:text-base">{job.location}</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <AiOutlineCalendar className="text-purple-600 w-5 h-5" />
-            <span>{job.deadline}</span>
+          <div className="flex items-center space-x-1 sm:space-x-2">
+            <AiOutlineCalendar className="text-purple-600 w-4 sm:w-5 h-4 sm:h-5" />
+            <span className="text-xs sm:text-base">{job.deadline}</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <MdBusiness className="text-purple-600 w-5 h-5" />
-            <span>{job.site === "Full_time" ? "Full-time" : job.site}</span>
+          <div className="flex items-center space-x-1 sm:space-x-2">
+            <MdBusiness className="text-purple-600 w-4 sm:w-5 h-4 sm:h-5" />
+            <span className="text-xs sm:text-base">
+              {job.site === "Full_time" ? "Full-time" : job.site}
+            </span>
           </div>
         </div>
-        <Card>
+        <Card className="p-2 sm:p-4">
           <CardHeader>
-            <CardTitle>About the Job</CardTitle>
+            <CardTitle className="text-base sm:text-lg">
+              About the Job
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-gray-700">
+          <CardContent className="p-1 sm:p-2">
+            <p className="text-xs sm:text-base text-gray-700">
               {expanded || job.about_job.length <= 200
                 ? job.about_job
-                : job.about_job.slice(0, 100) + "..."}
+                : job.about_job.slice(0, 80) + "..."}
             </p>
             {job.about_job.length > 200 && (
               <button
-                className="text-green-700 mt-2 hover:text-green-500"
+                className="text-green-700 text-xs sm:text-base mt-1 sm:mt-2 hover:text-green-500"
                 onClick={() => setExpanded(!expanded)}
               >
                 {expanded ? "read less" : "read more"}
@@ -175,7 +182,7 @@ export default function JobCard({ jobData }: JobCardProps) {
           </CardContent>
         </Card>
         <Button
-          className="bg-green-600 text-white hover:bg-green-700 mt-4"
+          className="bg-green-600 text-white hover:bg-green-700 px-3 sm:px-4 py-1 sm:py-2 text-xs sm:text-base mt-3 sm:mt-4 w-full sm:w-auto"
           onClick={() => router.push(`/jobs/${job.id}`)}
         >
           View Job Detail

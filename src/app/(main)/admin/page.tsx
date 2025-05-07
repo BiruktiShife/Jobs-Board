@@ -73,9 +73,6 @@ export default function AdminDashboard() {
           const jobsData = await jobsResponse.json();
           const rawApplicantsData = await applicantsResponse.json();
 
-          console.log("Jobs Data:", jobsData);
-          console.log("Raw Applicants Data:", rawApplicantsData);
-
           const applicantsData = rawApplicantsData.map((app: any) => ({
             id: app.id || "",
             name: app.name || "",
@@ -85,8 +82,6 @@ export default function AdminDashboard() {
             email: app.email || "",
             appliedOn: app.appliedOn || app.createdAt || "",
           }));
-
-          console.log("Transformed Applicants Data:", applicantsData);
 
           const jobIds = new Set(jobsData.map((job: Job) => job.id));
           const applicantJobIds = new Set(

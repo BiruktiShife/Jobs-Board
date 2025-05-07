@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { BsArrowLeft } from "react-icons/bs";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 
 interface Application {
   id: string;
@@ -118,7 +117,7 @@ export default function ApplicantDetailPage() {
         <Button
           variant="outline"
           className="mt-4 bg-green-600 text-white hover:bg-green-700 hover:text-white"
-          onClick={() => router.push(`/applicant-details/${jobId}`)}
+          onClick={() => router.push(`/applicants-detail/${jobId}`)}
         >
           <BsArrowLeft className="h-5 w-5 mr-2" />
           Back to Applicants
@@ -141,9 +140,9 @@ export default function ApplicantDetailPage() {
             >
               <BsArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-3xl font-bold text-green-800 flex items-center">
+            <h1 className="text-2xl sm:text-1xl font-bold text-green-800 flex items-center">
               <UserIcon className="h-8 w-8 mr-3 text-green-600" />
-              {applicant.fullName} - Application Details
+              {applicant.fullName}
             </h1>
           </div>
         </header>
@@ -277,7 +276,7 @@ export default function ApplicantDetailPage() {
                               applicant.certifications.map((cert, idx) => (
                                 <div
                                   key={idx}
-                                  className="bg-green-50 text-green-800 border-green-200 p-1 rounded-md"
+                                  className="bg-green-200 text-green-800 border-green-200 p-1 rounded-md"
                                 >
                                   {cert}
                                 </div>
@@ -294,7 +293,7 @@ export default function ApplicantDetailPage() {
                               applicant.languages.map((lang, idx) => (
                                 <div
                                   key={idx}
-                                  className="bg-green-50 text-green-800 border-green-200 p-1 rounded-md"
+                                  className="bg-green-200 text-green-800 border-green-200 p-1 rounded-md"
                                 >
                                   {lang}
                                 </div>
@@ -315,19 +314,29 @@ export default function ApplicantDetailPage() {
                       <div className="space-y-3">
                         <div>
                           <p className="text-sm text-gray-500">Status</p>
-                          <p>
-                            {applicant.status === "Reviewed" ? (
-                              <Badge className="bg-green-100 text-green-800">
+                          <div>
+                            {applicant.status === "Accepted" ? (
+                              <div className="flex items-center bg-green-200 text-green-600 px-2 py-1 rounded-md">
+                                <CheckCircleIcon className="h-4 w-4 mr-1" />
+                                Accepted
+                              </div>
+                            ) : applicant.status === "Rejected" ? (
+                              <div className="flex items-center bg-red-200 text-red-600 px-2 py-1 rounded-md">
+                                <ClockIcon className="h-4 w-4 mr-1" />
+                                Rejected
+                              </div>
+                            ) : applicant.status === "Reviewed" ? (
+                              <div className="flex items-center bg-blue-200 text-blue-600 px-2 py-1 rounded-md">
                                 <CheckCircleIcon className="h-4 w-4 mr-1" />
                                 Reviewed
-                              </Badge>
+                              </div>
                             ) : (
-                              <div className="bg-green-50 text-green-800 border-green-200 p-1 rounded-md">
+                              <div className="flex items-center bg-gray-200 text-gray-600 px-2 py-1 rounded-md">
                                 <ClockIcon className="h-4 w-4 mr-1" />
                                 Pending
                               </div>
                             )}
-                          </p>
+                          </div>
                         </div>
                         <div>
                           <p className="text-sm text-gray-500">Applied On</p>

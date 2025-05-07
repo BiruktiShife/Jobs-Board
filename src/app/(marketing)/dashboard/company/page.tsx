@@ -110,90 +110,94 @@ export default function CompanyDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <header className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-green-800 flex items-center">
-            <Briefcase className="h-8 w-8 mr-3 text-green-600" />
-            {companyName} Dashboard
-          </h1>
-          <div className="flex space-x-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 p-4 sm:p-6">
+      <div className="w-full max-w-7xl mx-auto space-y-6">
+        <header className="flex flex-col gap-4">
+          <div className="flex flex-row justify-between items-center">
+            <h1 className="text-xl sm:text-3xl font-bold text-green-800 flex items-center">
+              <Briefcase className="h-6 w-6 sm:h-8 sm:w-8 mr-3 text-green-600" />
+              {companyName} Dashboard
+            </h1>
+            <Profile email={session?.user?.email || "admin@company.com"} />
+          </div>
+          <div className="flex justify-start">
             <Button
-              className="bg-green-600 hover:bg-green-700 text-white flex items-center"
+              className="bg-green-600 hover:bg-green-700 text-white flex items-center w-full sm:w-auto px-3 sm:px-4 py-2"
               onClick={() => router.push("/jobs/company-job-form")}
             >
-              <PlusCircle className="h-5 w-5 mr-2" />
+              <PlusCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
               Post New Job
             </Button>
-            <Profile email={session?.user?.email || "admin@company.com"} />
           </div>
         </header>
 
-        <Tabs defaultValue="jobs" className="space-y-6">
+        <Tabs defaultValue="jobs" className="space-y-6 w-full">
           <TabsContent value="jobs">
-            <Card className="shadow-lg hover:shadow-xl transition-shadow border border-green-100">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow border border-green-100 w-full">
               <CardHeader className="bg-green-50 rounded-t-lg">
-                <CardTitle className="text-xl font-semibold text-green-800 flex items-center py-3">
-                  <FileText className="h-5 w-5 mr-2" />
+                <CardTitle className="text-lg sm:text-xl font-semibold text-green-800 flex items-center py-3">
+                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                   Posted Jobs
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 {jobs.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="mx-auto w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                      <Briefcase className="h-12 w-12 text-gray-400" />
+                  <div className="text-center py-8">
+                    <div className="mx-auto w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                      <Briefcase className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900">
+                    <h3 className="text-base sm:text-lg font-medium text-gray-900">
                       No jobs posted yet
                     </h3>
-                    <p className="mt-2 text-gray-500">
+                    <p className="mt-2 text-sm sm:text-base text-gray-500">
                       Get started by posting your first job opening
                     </p>
                     <Button
-                      className="mt-4 bg-green-600 hover:bg-green-700 text-white"
+                      className="mt-4 bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto px-3 sm:px-4 py-2"
                       onClick={() => router.push("/jobs/company-job-form")}
                     >
-                      <PlusCircle className="h-5 w-5 mr-2" />
+                      <PlusCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                       Post a Job
                     </Button>
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-gray-200 overflow-hidden">
-                    <Table>
+                  <div className="rounded-lg border border-gray-200 overflow-x-auto">
+                    <Table className="min-w-full">
                       <TableHeader className="bg-gray-50">
                         <TableRow>
-                          <TableHead className="min-w-[200px]">
+                          <TableHead className="min-w-[150px] sm:min-w-[200px] text-sm sm:text-base p-2 sm:p-4">
                             <span className="inline-flex items-center">
                               <FileText className="h-4 w-4 mr-2 text-green-600" />
                               Title
                             </span>
                           </TableHead>
-                          <TableHead>
+                          <TableHead className="text-sm sm:text-base p-2 sm:p-4">
                             <span className="inline-flex items-center">
                               <MapPin className="h-4 w-4 mr-2 text-green-600" />
                               Area
                             </span>
                           </TableHead>
-                          <TableHead>
+                          <TableHead className="text-sm sm:text-base p-2 sm:p-4">
                             <span className="inline-flex items-center">
                               <MapPin className="h-4 w-4 mr-2 text-green-600" />
                               Location
                             </span>
                           </TableHead>
-                          <TableHead>
+                          <TableHead className="text-sm sm:text-base p-2 sm:p-4">
                             <span className="inline-flex items-center">
                               <Calendar className="h-4 w-4 mr-2 text-green-600" />
                               Deadline
                             </span>
                           </TableHead>
-                          <TableHead>
+                          <TableHead className="text-sm sm:text-base p-2 sm:p-4">
                             <span className="inline-flex items-center">
                               <Users className="h-4 w-4 mr-2 text-green-600" />
                               Applicants
                             </span>
                           </TableHead>
-                          <TableHead className="text-right">Details</TableHead>
+                          <TableHead className="text-right text-sm sm:text-base p-2 sm:p-4">
+                            Details
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -205,18 +209,20 @@ export default function CompanyDashboard() {
                               key={job.id}
                               className="hover:bg-green-50"
                             >
-                              <TableCell className="font-medium">
+                              <TableCell className="font-medium text-sm sm:text-base p-2 sm:p-4">
                                 {job.title}
                               </TableCell>
-                              <TableCell>
-                                <div className="bg-blue-50 text-blue-800 p-2 rounded-md">
+                              <TableCell className="text-sm sm:text-base p-2 sm:p-4">
+                                <div className="bg-blue-50 text-blue-800 px-2 py-1 rounded-md">
                                   {job.area}
                                 </div>
                               </TableCell>
-                              <TableCell>{job.location}</TableCell>
-                              <TableCell>
+                              <TableCell className="text-sm sm:text-base p-2 sm:p-4">
+                                {job.location}
+                              </TableCell>
+                              <TableCell className="text-sm sm:text-base p-2 sm:p-4">
                                 <div
-                                  className={`flex items-center bg-purple-50 text-purple-800 p-2 rounded-md ${
+                                  className={`flex items-center bg-purple-50 text-purple-800 px-2 py-1 rounded-md ${
                                     isDeadlinePassed
                                       ? "text-red-600"
                                       : "text-gray-700"
@@ -231,7 +237,7 @@ export default function CompanyDashboard() {
                                   )}
                                 </div>
                               </TableCell>
-                              <TableCell>
+                              <TableCell className="text-sm sm:text-base p-2 sm:p-4">
                                 <div className="flex items-center">
                                   <Users className="h-4 w-4 mr-2 text-green-600" />
                                   <div className="text-green-800">
@@ -239,10 +245,10 @@ export default function CompanyDashboard() {
                                   </div>
                                 </div>
                               </TableCell>
-                              <TableCell className="text-right">
+                              <TableCell className="text-right p-2 sm:p-4">
                                 <Button
                                   variant="outline"
-                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                  className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto px-3 sm:px-4 py-2"
                                   onClick={() => handleViewApplicants(job.id)}
                                 >
                                   View
