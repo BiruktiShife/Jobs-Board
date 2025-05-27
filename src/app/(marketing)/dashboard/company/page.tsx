@@ -113,21 +113,20 @@ export default function CompanyDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 p-4 sm:p-6">
       <div className="w-full max-w-7xl mx-auto space-y-6">
         <header className="flex flex-col gap-4">
-          <div className="flex flex-row justify-between items-center">
+          <div className="flex flex-row  items-center justify-between">
             <h1 className="text-xl sm:text-3xl font-bold text-green-800 flex items-center">
-              <Briefcase className="h-6 w-6 sm:h-8 sm:w-8 mr-3 text-green-600" />
               {companyName} Dashboard
             </h1>
-            <Profile email={session?.user?.email || "admin@company.com"} />
-          </div>
-          <div className="flex justify-start">
-            <Button
-              className="bg-green-600 hover:bg-green-700 text-white flex items-center w-full sm:w-auto px-3 sm:px-4 py-2"
-              onClick={() => router.push("/jobs/company-job-form")}
-            >
-              <PlusCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-              Post New Job
-            </Button>
+            <div className="flex flex-row gap-4 items-center">
+              <Button
+                className="bg-green-600 hover:bg-green-700 text-white flex items-center w-full sm:w-auto px-3 sm:px-4 py-2"
+                onClick={() => router.push("/jobs/company-job-form")}
+              >
+                <PlusCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                Post New Job
+              </Button>
+              <Profile email={session?.user?.email || "admin@company.com"} />
+            </div>
           </div>
         </header>
 
@@ -213,7 +212,7 @@ export default function CompanyDashboard() {
                                 {job.title}
                               </TableCell>
                               <TableCell className="text-sm sm:text-base p-2 sm:p-4">
-                                <div className="bg-blue-50 text-blue-800 px-2 py-1 rounded-md">
+                                <div className="font-medium text-blue-800 px-2 py-1 rounded-md">
                                   {job.area}
                                 </div>
                               </TableCell>
@@ -222,7 +221,7 @@ export default function CompanyDashboard() {
                               </TableCell>
                               <TableCell className="text-sm sm:text-base p-2 sm:p-4">
                                 <div
-                                  className={`flex items-center bg-purple-50 text-purple-800 px-2 py-1 rounded-md ${
+                                  className={`flex items-center font-medium text-purple-800 px-2 py-1 rounded-md ${
                                     isDeadlinePassed
                                       ? "text-red-600"
                                       : "text-gray-700"
@@ -231,7 +230,7 @@ export default function CompanyDashboard() {
                                   <Calendar className="h-4 w-4 mr-2" />
                                   {new Date(job.deadline).toLocaleDateString()}
                                   {isDeadlinePassed && (
-                                    <span className="ml-2 text-xs text-red-500">
+                                    <span className="ml-2 text-xs font-medium text-red-500">
                                       (Closed)
                                     </span>
                                   )}
@@ -240,7 +239,7 @@ export default function CompanyDashboard() {
                               <TableCell className="text-sm sm:text-base p-2 sm:p-4">
                                 <div className="flex items-center">
                                   <Users className="h-4 w-4 mr-2 text-green-600" />
-                                  <div className="text-green-800">
+                                  <div className="text-green-800 font-medium">
                                     {job.applications.length}
                                   </div>
                                 </div>

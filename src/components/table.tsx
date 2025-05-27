@@ -26,6 +26,7 @@ interface Job {
   postedDate: string;
   applications: number;
 }
+
 interface AppliedJobRow {
   title: string;
   company: string;
@@ -47,12 +48,24 @@ interface Company {
   adminEmail: string;
 }
 
-type TableData = Job | Applicant | Company | AppliedJobRow;
+export interface BookmarkTableData {
+  id: string;
+  title: string;
+  company_name: string;
+}
+
+export type TableData =
+  | Job
+  | Applicant
+  | Company
+  | AppliedJobRow
+  | BookmarkTableData;
 
 export type ColumnName =
   | "Title"
   | "Posted Date"
   | "Company"
+  | "Company Name"
   | "Applications"
   | "Name"
   | "Job"
@@ -60,12 +73,14 @@ export type ColumnName =
   | "Email"
   | "Job Title"
   | "Applied On"
-  | "Status";
+  | "Status"
+  | "Actions";
 
 type DataKey =
   | "title"
   | "postedDate"
   | "company"
+  | "company_name"
   | "applications"
   | "name"
   | "job"
@@ -73,12 +88,14 @@ type DataKey =
   | "email"
   | "jobTitle"
   | "appliedOn"
-  | "status";
+  | "status"
+  | "actions";
 
 interface TableProps {
   data: TableData[];
   columns: ColumnName[];
-  onCellClick?: (row: TableData, column: ColumnName) => void; // Added prop
+  onCellClick?: (row: TableData, column: ColumnName) => void;
+  renderCell?: (row: TableData, column: ColumnName) => React.ReactNode;
 }
 
 const columnIcons: Record<ColumnName, React.ReactNode> = {
@@ -86,6 +103,7 @@ const columnIcons: Record<ColumnName, React.ReactNode> = {
   "Posted Date": <Calendar className="w-4 h-4 mr-2" />,
   Applications: <Users className="w-4 h-4 mr-2" />,
   Company: <Building className="w-4 h-4 mr-2" />,
+  "Company Name": <Building className="w-4 h-4 mr-2" />,
   Name: <User className="w-4 h-4 mr-2" />,
   Job: <Briefcase className="w-4 h-4 mr-2" />,
   "Admin Email": <Mail className="w-4 h-4 mr-2" />,
@@ -93,28 +111,36 @@ const columnIcons: Record<ColumnName, React.ReactNode> = {
   "Job Title": <FileText className="w-4 h-4 mr-2" />,
   "Applied On": <Calendar className="w-4 h-4 mr-2" />,
   Status: <CheckCircle className="w-4 h-4 mr-2" />,
+  Actions: <CheckCircle className="w-4 h-4 mr-2" />,
 };
 
 const statusColors: Record<string, string> = {
-  Pending: "bg-yellow-100 text-yellow-800 px-2 py-1 rounded-md",
-  Approved: "bg-green-100 text-green-800 px-2 py-1 rounded-md",
-  Rejected: "bg-red-100 text-red-800 px-2 py-1 rounded-md",
-  Reviewed: "bg-blue-100 text-blue-800 px-2 py-1 rounded-md",
+  Pending: " text-yellow-800",
+  Approved: " text-green-800",
+  Rejected: " text-red-800",
+  Reviewed: "text-blue-800",
 };
 
-export function CustomTable({ data, columns, onCellClick }: TableProps) {
+export function CustomTable({
+  data,
+  columns,
+  onCellClick,
+  renderCell,
+}: TableProps) {
   const columnKeyMap: Record<ColumnName, DataKey> = {
     Title: "title",
     "Posted Date": "postedDate",
     Applications: "applications",
     Company: "company",
+    "Company Name": "company_name",
     Name: "name",
     Job: "job",
     "Admin Email": "adminEmail",
     Email: "email",
-    "Job Title": "jobTitle",
+    "Job Title": "title",
     "Applied On": "appliedOn",
     Status: "status",
+    Actions: "actions",
   };
 
   if (!columns) {
@@ -135,7 +161,7 @@ export function CustomTable({ data, columns, onCellClick }: TableProps) {
             statusColors[value] || "bg-gray-100 text-gray-800"
           )}
         >
-          {value}
+          {value ?? "N/A"}
         </Badge>
       );
     }
@@ -143,27 +169,27 @@ export function CustomTable({ data, columns, onCellClick }: TableProps) {
     if (column === "Applications") {
       return (
         <div className="flex items-center">
-          <span className="bg-green-200 px-14 py-1 rounded-lg">{value}</span>
+          <span className="px-14 font-medium">{value ?? "N/A"}</span>
         </div>
       );
     }
 
     if (column === "Posted Date" || column === "Applied On") {
-      return new Date(value).toLocaleDateString();
+      return value ? new Date(value).toLocaleDateString() : "N/A";
     }
 
     if (column === "Email") {
       return (
         <a
           href={`mailto:${value}`}
-          className="text-blue-600 hover:underline flex items-center"
+          className="text-blue-600 hover:underline flex items-center font-medium"
         >
-          {value}
+          {value ?? "N/A"}
         </a>
       );
     }
 
-    return value;
+    return value ?? "N/A";
   };
 
   return (
@@ -215,10 +241,12 @@ export function CustomTable({ data, columns, onCellClick }: TableProps) {
                       column === "Applications" && onCellClick?.(row, column)
                     }
                   >
-                    {formatCellValue(
-                      column,
-                      (row as any)[columnKeyMap[column]] ?? "N/A"
-                    )}
+                    {renderCell
+                      ? renderCell(row, column)
+                      : formatCellValue(
+                          column,
+                          (row as any)[columnKeyMap[column]]
+                        )}
                   </TableCell>
                 ))}
               </TableRow>

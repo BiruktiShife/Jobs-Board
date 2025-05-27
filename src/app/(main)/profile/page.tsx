@@ -8,13 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Loader2,
   Upload,
   CheckCircle2,
@@ -29,13 +22,14 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { BsArrowLeft } from "react-icons/bs";
 import { motion } from "framer-motion";
+import { MultiSelect } from "@/components/ui/multi-select"; // Replace with your actual MultiSelect component
 
 export default function ManageProfile() {
   const { data: session } = useSession();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [studyArea, setStudyArea] = useState<string>("");
+  const [studyArea, setStudyArea] = useState<string[]>([]);
   const [profileImage, setProfileImage] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +37,10 @@ export default function ManageProfile() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [initialName, setInitialName] = useState("");
+  const [initialPhone, setInitialPhone] = useState("");
+  const [initialStudyArea, setInitialStudyArea] = useState<string[]>([]);
+  const [, setInitialProfileImage] = useState<string>("");
 
   const studyAreaOptions = [
     "Programming",
@@ -53,7 +51,16 @@ export default function ManageProfile() {
     "Finance",
     "Engineering",
     "Sales",
+    "Marketing",
+    "Data Science",
+    "Human Resources",
+    "Product Management",
+    "Operations",
+    "Logistics",
+    "Research",
+    "Customer Support",
   ];
+
   const pinataRewriteUrl = (url: string | null | undefined): string => {
     if (!url) return "";
     try {
@@ -76,8 +83,25 @@ export default function ManageProfile() {
         setName(data.name || "");
         setEmail(data.email || "");
         setPhone(data.phone || "");
-        setStudyArea(data.studyArea || "");
+        setStudyArea(
+          data.studyArea
+            ? Array.isArray(data.studyArea)
+              ? data.studyArea
+              : [data.studyArea]
+            : []
+        );
         setProfileImage(pinataRewriteUrl(data.image) || "");
+        // Set initial values
+        setInitialName(data.name || "");
+        setInitialPhone(data.phone || "");
+        setInitialStudyArea(
+          data.studyArea
+            ? Array.isArray(data.studyArea)
+              ? data.studyArea
+              : [data.studyArea]
+            : []
+        );
+        setInitialProfileImage(pinataRewriteUrl(data.image) || "");
       } catch (err) {
         console.error("Error fetching profile:", err);
         setError("Failed to load profile data");
@@ -87,6 +111,14 @@ export default function ManageProfile() {
     };
     fetchProfile();
   }, [session]);
+
+  // Determine if there are any changes
+  const hasChanges =
+    name !== initialName ||
+    phone !== initialPhone ||
+    JSON.stringify(studyArea.sort()) !==
+      JSON.stringify(initialStudyArea.sort()) ||
+    file !== null;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -104,6 +136,7 @@ export default function ManageProfile() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasChanges) return; // Prevent submission if no changes
     setIsSubmitting(true);
     setError(null);
     setSuccess(null);
@@ -160,8 +193,25 @@ export default function ManageProfile() {
         setName(updatedData.name || "");
         setEmail(updatedData.email || "");
         setPhone(updatedData.phone || "");
-        setStudyArea(updatedData.studyArea || "");
+        setStudyArea(
+          updatedData.studyArea
+            ? Array.isArray(updatedData.studyArea)
+              ? updatedData.studyArea
+              : [updatedData.studyArea]
+            : []
+        );
         setProfileImage(pinataRewriteUrl(updatedData.image));
+        // Update initial values after successful save
+        setInitialName(updatedData.name || "");
+        setInitialPhone(updatedData.phone || "");
+        setInitialStudyArea(
+          updatedData.studyArea
+            ? Array.isArray(updatedData.studyArea)
+              ? updatedData.studyArea
+              : [updatedData.studyArea]
+            : []
+        );
+        setInitialProfileImage(pinataRewriteUrl(updatedData.image));
         setFile(null);
         setPreview(null);
         setSuccess("Profile updated successfully!");
@@ -329,29 +379,22 @@ export default function ManageProfile() {
                       className="flex items-center gap-2 text-gray-700"
                     >
                       <BookOpen className="w-4 h-4 text-green-600" />
-                      Study Area
+                      Study Areas
                     </Label>
-                    <Select onValueChange={setStudyArea} value={studyArea}>
-                      <SelectTrigger className="focus:ring-green-500 focus:border-green-500 border-gray-300">
-                        <SelectValue placeholder="Select your study area" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {studyAreaOptions.map((option) => (
-                          <SelectItem
-                            key={option}
-                            value={option}
-                            className="hover:bg-green-50"
-                          >
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <MultiSelect
+                      options={studyAreaOptions.map((option) => ({
+                        value: option,
+                        label: option,
+                      }))}
+                      selected={studyArea}
+                      onChange={setStudyArea}
+                      placeholder="Select your study areas"
+                      className="focus:ring-green-500 focus:border-green-500 border-gray-300"
+                    />
                   </div>
                 )}
               </div>
 
-              {/* Status Messages */}
               {error && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
@@ -374,14 +417,14 @@ export default function ManageProfile() {
                 </motion.div>
               )}
 
-              {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !hasChanges}
                 className={cn(
                   "w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition-all shadow-md",
                   "flex items-center justify-center gap-2",
-                  isSubmitting && "opacity-80 cursor-not-allowed"
+                  (isSubmitting || !hasChanges) &&
+                    "opacity-80 cursor-not-allowed"
                 )}
               >
                 {isSubmitting ? (

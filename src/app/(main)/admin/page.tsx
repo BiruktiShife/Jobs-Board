@@ -248,14 +248,12 @@ export default function AdminDashboard() {
       })
     : [];
 
-  // Filter jobs based on title and company
   const filteredJobs = jobs.filter(
     (job) =>
       job.title.toLowerCase().includes(titleFilter.toLowerCase()) &&
       job.company.toLowerCase().includes(companyFilter.toLowerCase())
   );
 
-  // Filter companies based on name
   const filteredCompanies = companies.filter((company) =>
     company.name.toLowerCase().includes(nameFilter.toLowerCase())
   );

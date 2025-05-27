@@ -330,11 +330,14 @@ export default function ApplicationForm() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-300 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8 text-green-700">
-          <span className="mr-5">
-            <Link href="/dashboard">
-              <BsArrowLeft />{" "}
+      <div className="max-w-4xl mx-auto ">
+        <h1 className="flex items-center justify-center gap-3 sm:gap-4 text-2xl sm:text-4xl font-semibold text-green-600 sm:text-green-700 break-words text-center mb-6 sm:mb-8">
+          <span className="absolute left-0 top-4 sm:static sm:mr-5">
+            <Link
+              href="/dashboard"
+              className="p-2 sm:p-2.5 rounded-full hover:bg-green-100 transition-colors"
+            >
+              <BsArrowLeft className="w-5 sm:w-6 h-5 sm:h-6 text-green-600 sm:text-green-700" />
             </Link>
           </span>
           Apply for {title}

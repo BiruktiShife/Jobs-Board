@@ -27,7 +27,6 @@ export async function GET() {
       );
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    console.log("GET /api/user/profile: Fetched user:", user);
     return NextResponse.json(user);
   } catch (error) {
     console.error("GET /api/user/profile: Error fetching user profile:", error);
@@ -54,10 +53,25 @@ export async function PUT(request: Request) {
       image,
     });
 
-    // Validate input
     if (image && !isValidUrl(image)) {
       console.error("PUT /api/user/profile: Invalid image URL:", image);
       return NextResponse.json({ error: "Invalid image URL" }, { status: 400 });
+    }
+
+    // Validate studyArea as an array
+    if (
+      studyArea &&
+      (!Array.isArray(studyArea) ||
+        !studyArea.every((item) => typeof item === "string"))
+    ) {
+      console.error(
+        "PUT /api/user/profile: Invalid studyArea format:",
+        studyArea
+      );
+      return NextResponse.json(
+        { error: "Invalid studyArea format" },
+        { status: 400 }
+      );
     }
 
     const user = await prisma.user.findUnique({
@@ -105,11 +119,15 @@ export async function PUT(request: Request) {
   }
 }
 
-// Helper function to validate URLs
 function isValidUrl(url: string): boolean {
   try {
     new URL(url);
-    return url.startsWith("https://gateway.pinata.cloud/ipfs/");
+    return (
+      url.startsWith("https://gateway.pinata.cloud/ipfs/") ||
+      url.startsWith(
+        "https://silver-accepted-barracuda-955.mypinata.cloud/ipfs/"
+      )
+    );
   } catch {
     return false;
   }

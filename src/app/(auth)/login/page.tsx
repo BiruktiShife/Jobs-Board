@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BsArrowRight } from "react-icons/bs";
 import { AiOutlineGoogle } from "react-icons/ai";
-import { BsLinkedin } from "react-icons/bs";
 import { SocialButton } from "@/components/social-button";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
@@ -114,11 +113,6 @@ export default function LoginPage() {
               icon={<AiOutlineGoogle size={20} className="text-blue-500" />}
               label="Google"
               onClick={() => handleSocialSignIn("google")}
-            />
-            <SocialButton
-              icon={<BsLinkedin size={20} className="text-blue-500" />}
-              label="LinkedIn"
-              onClick={() => handleSocialSignIn("linkedin")}
             />
           </div>
           <p className="mt-4 text-center text-sm">

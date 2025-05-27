@@ -34,15 +34,17 @@ interface Job {
   qualifications: string[];
   responsibilities: string[];
   requiredSkills: string[];
+  postedDate: string;
 }
 
 interface HomeSectionProps {
   recommendedJobs: Job[];
+  userRole?: string;
 }
 
 const JobCardSkeleton = () => {
   return (
-    <div className="p-4 sm:p-6 border rounded-lg shadow-sm bg-white">
+    <div className="p-4 sm:p-6 border rounded-lg shadow-sm bg-white w-full">
       <div className="flex items-center gap-3 sm:gap-4">
         <Skeleton className="w-10 sm:w-12 h-10 sm:h-12 rounded-full" />
         <div className="space-y-1 sm:space-y-2">
@@ -61,7 +63,7 @@ const JobCardSkeleton = () => {
   );
 };
 
-export function HomeSection({ recommendedJobs }: HomeSectionProps) {
+export function HomeSection({ recommendedJobs, userRole }: HomeSectionProps) {
   const categories: Category[] = [
     {
       icon: <FaLaptopCode className="w-5 sm:w-6 h-5 sm:h-6" />,
@@ -114,8 +116,12 @@ export function HomeSection({ recommendedJobs }: HomeSectionProps) {
           throw new Error("Failed to fetch jobs");
         }
         const data = await response.json();
-        setJobs(data);
-        setFilteredJobs(data);
+        const sortedData = data.sort(
+          (a: Job, b: Job) =>
+            new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime()
+        );
+        setJobs(sortedData);
+        setFilteredJobs(sortedData);
         setLoading(false);
       } catch (err) {
         console.error(err);
@@ -141,6 +147,11 @@ export function HomeSection({ recommendedJobs }: HomeSectionProps) {
       );
     }
 
+    filtered = filtered.sort(
+      (a, b) =>
+        new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime()
+    );
+
     setFilteredJobs(filtered);
   }, [searchQuery, jobs, selectedCategory]);
 
@@ -157,17 +168,21 @@ export function HomeSection({ recommendedJobs }: HomeSectionProps) {
         throw new Error("Failed to fetch jobs for category");
       }
       const data = await response.json();
-      setJobs(data);
+      const sortedData = data.sort(
+        (a: Job, b: Job) =>
+          new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime()
+      );
+      setJobs(sortedData);
       setFilteredJobs(
         searchQuery
-          ? data.filter(
+          ? sortedData.filter(
               (job: Job) =>
                 job.company_name
                   .toLowerCase()
                   .includes(searchQuery.toLowerCase()) ||
                 job.title.toLowerCase().includes(searchQuery.toLowerCase())
             )
-          : data
+          : sortedData
       );
       setLoading(false);
     } catch (err) {
@@ -190,25 +205,30 @@ export function HomeSection({ recommendedJobs }: HomeSectionProps) {
   };
 
   const handleSearch = () => {
-    const filtered = selectedCategory
+    let filtered = selectedCategory
       ? jobs.filter(
           (job) => job.area.toLowerCase() === selectedCategory.toLowerCase()
         )
       : jobs;
 
-    setFilteredJobs(
-      filtered.filter(
-        (job) =>
-          job.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          job.title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+    filtered = filtered.filter(
+      (job) =>
+        job.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        job.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    filtered = filtered.sort(
+      (a, b) =>
+        new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime()
+    );
+
+    setFilteredJobs(filtered);
   };
 
   return (
     <div className="flex flex-col min-h-screen overflow-x-hidden">
       <section
-        className="flex flex-col md:flex-row gap-6 sm:gap-8 md:gap-24 py-8 sm:py-12 md:py-20 relative items-center justify-between"
+        className="flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-8 py-2 sm:py-4 md:py-6 items-center justify-between relative mt-0"
         style={{
           backgroundImage: 'url("/bg.JPG")',
           backgroundSize: "cover",
@@ -225,7 +245,7 @@ export function HomeSection({ recommendedJobs }: HomeSectionProps) {
             Join thousands of candidates and employers on JobBoard.
           </p>
         </div>
-        <div className="w-full md:w-1/2 px-4 sm:px-6 mt-6 sm:mt-8 md:mt-0 relative z-10">
+        <div className="w-full md:w-1/2 px-4 sm:px-6 mt-2 sm:mt-4 md:mt-0 relative z-10 flex flex-col items-center">
           <Image
             src="/image.png"
             alt="Sample Image"
@@ -233,7 +253,7 @@ export function HomeSection({ recommendedJobs }: HomeSectionProps) {
             height={128}
             className="w-40 sm:w-60 md:w-80 h-auto mx-auto"
           />
-          <div className="w-full max-w-full sm:max-w-lg md:max-w-2xl mx-auto mt-6 sm:mt-8">
+          <div className="w-full max-w-full sm:max-w-lg md:max-w-2xl mx-auto mt-2 sm:mt-4">
             <div className="relative flex items-center bg-white p-1 sm:p-2 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
               <svg
                 className="w-5 sm:w-6 h-5 sm:h-6 text-gray-400 ml-2 sm:ml-3"
@@ -267,22 +287,24 @@ export function HomeSection({ recommendedJobs }: HomeSectionProps) {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 md:hidden">
-        <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-800">
-          Recommended Jobs
-        </h2>
-        <div className="space-y-2 sm:space-y-4">
-          {recommendedJobs.length > 0 ? (
-            recommendedJobs.map((job) => (
-              <JobCard key={job.id} jobData={job} className="w-full" />
-            ))
-          ) : (
-            <p className="text-gray-600 text-xs sm:text-base">
-              No recommended jobs match your study area yet.
-            </p>
-          )}
-        </div>
-      </section>
+      {userRole !== "ADMIN" && (
+        <section className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 md:hidden">
+          <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-800">
+            Recommended Jobs
+          </h2>
+          <div className="space-y-2 sm:space-y-4">
+            {recommendedJobs.length > 0 ? (
+              recommendedJobs.map((job) => (
+                <JobCard key={job.id} jobData={job} className="w-full" />
+              ))
+            ) : (
+              <p className="text-gray-600 text-xs sm:text-base">
+                No recommended jobs match your study area yet.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       <section className="container mx-auto relative mt-4 sm:mt-6">
         <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-8">
@@ -335,15 +357,29 @@ export function HomeSection({ recommendedJobs }: HomeSectionProps) {
           Jobs
         </h2>
         {loading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            {[...Array(4)].map((_, index) => (
+          <div
+            className="grid lg:grid-cols-3 sm:grid-cols-1 gap-4 sm:gap-6 jobs-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fill, minmax(250px, 1fr)) !important",
+            }}
+          >
+            {[...Array(3)].map((_, index) => (
               <JobCardSkeleton key={index} />
             ))}
           </div>
         ) : error ? (
           <p className="text-red-500 text-sm sm:text-base">{error}</p>
         ) : filteredJobs.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div
+            className="grid sm:grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 jobs-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fill, minmax(250px, 1fr)) !important",
+            }}
+          >
             {filteredJobs.map((job) => (
               <JobCard key={job.id} jobData={job} className="w-full" />
             ))}

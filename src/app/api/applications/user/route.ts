@@ -18,7 +18,7 @@ export async function GET() {
       include: {
         job: {
           include: {
-            company: true, // includes all company fields
+            company: true,
           },
         },
       },

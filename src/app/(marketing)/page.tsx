@@ -294,7 +294,7 @@ export default function Home() {
         )}
         {error && <p className="text-red-500 text-center">{error}</p>}
         {!loading && !error && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {filteredJobs.length === 0 ? (
               <p className="text-center text-gray-500">
                 No jobs found matching your search or category.

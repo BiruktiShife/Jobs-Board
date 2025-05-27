@@ -23,6 +23,7 @@ interface Job {
   qualifications: string[];
   responsibilities: string[];
   requiredSkills: string[];
+  postedDate: string; // Added for sorting
 }
 
 export default function Dashboard() {
@@ -49,7 +50,12 @@ export default function Dashboard() {
         const response = await fetch("/api/jobs/recommended-jobs");
         if (!response.ok) throw new Error("Failed to fetch recommended jobs");
         const data = await response.json();
-        setJobs(data);
+        // Sort recommended jobs by postedDate (latest first)
+        const sortedData = data.sort(
+          (a: Job, b: Job) =>
+            new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime()
+        );
+        setJobs(sortedData);
       } catch (err) {
         console.error(err);
         setError("Failed to load recommended jobs");
@@ -60,28 +66,24 @@ export default function Dashboard() {
 
     if (
       status === "authenticated" &&
-      ["ADMIN", "JOB_SEEKER"].includes(session?.user?.role || "")
+      session?.user?.role === "JOB_SEEKER" // Only fetch for JOB_SEEKER
     ) {
       fetchJobs();
+    } else {
+      setLoading(false); // Skip loading for ADMIN
     }
   }, [status, session]);
 
-  if (status === "loading") {
+  if (status === "loading" || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-green-100 p-3 sm:p-8">
         <Loader2 className="w-6 h-6 sm:w-10 sm:h-10 animate-spin text-green-600" />
       </div>
     );
   }
+
   if (!session || !session.user.email) {
     return null;
-  }
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-green-100 p-3 sm:p-8">
-        <Loader2 className="w-6 h-6 sm:w-10 sm:h-10 animate-spin text-green-600" />
-      </div>
-    );
   }
 
   if (error) {
@@ -93,7 +95,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen pt-14 sm:pt-20 overflow-x-hidden">
+    <div className="flex flex-col min-h-screen pt-10 sm:pt-12 overflow-x-hidden">
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-transparent backdrop-blur-md shadow-md py-2 sm:py-1.5">
         <div className="flex items-center gap-2 sm:gap-4 px-3 sm:px-8">
           <Image
@@ -126,27 +128,36 @@ export default function Dashboard() {
           <Profile email={session.user.email} />
         </div>
       </nav>
-      <div className="flex flex-col md:flex-row gap-4 md:gap-8 p-3 sm:p-8">
-        <aside className="w-full md:w-1/3 md:border-l md:pl-6 order-1 md:order-2 hidden md:block">
-          <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-800">
-            Recommended Jobs
-          </h2>
-          <div className="space-y-2 sm:space-y-4">
-            {jobs.length > 0 ? (
-              jobs.map((job) => (
-                <JobCard key={job.id} jobData={job} className="w-full" />
-              ))
-            ) : (
-              <p className="text-gray-600 text-xs sm:text-base">
-                No recommended jobs match your study area yet.
-              </p>
-            )}
-          </div>
-        </aside>
-        <div className="w-full md:w-2/3 space-y-3 sm:space-y-6 order-2 md:order-1">
-          <HomeSection recommendedJobs={jobs} />
+      {jobs.length < 3 || session.user.role === "ADMIN" ? (
+        <div className="w-full p-3 sm:p-8">
+          <HomeSection
+            recommendedJobs={session.user.role === "ADMIN" ? [] : jobs}
+            userRole={session.user.role}
+          />
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-col md:flex-row gap-4 md:gap-8 p-3 sm:p-8">
+          <aside className="w-full md:w-1/3 md:border-l md:pl-6 order-1 md:order-2 hidden md:block">
+            <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-800">
+              Recommended Jobs
+            </h2>
+            <div className="space-y-2 sm:space-y-4">
+              {jobs.length > 0 ? (
+                jobs.map((job) => (
+                  <JobCard key={job.id} jobData={job} className="w-full" />
+                ))
+              ) : (
+                <p className="text-gray-600 text-xs sm:text-base">
+                  No recommended jobs match your study area yet.
+                </p>
+              )}
+            </div>
+          </aside>
+          <div className="w-full md:w-2/3 space-y-3 sm:space-y-6 order-2 md:order-1">
+            <HomeSection recommendedJobs={jobs} userRole={session.user.role} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

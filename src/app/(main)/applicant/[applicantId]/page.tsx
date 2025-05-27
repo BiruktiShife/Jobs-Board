@@ -226,10 +226,7 @@ export default function ApplicantDetailPage() {
                           <div className="flex flex-wrap gap-2 mt-1">
                             {applicant.skills.length > 0 ? (
                               applicant.skills.map((skill, idx) => (
-                                <div
-                                  key={idx}
-                                  className="bg-yellow-100 text-yellow-800 p-1 rounded-md"
-                                >
+                                <div key={idx} className=" text-yellow-800 ">
                                   {skill}
                                 </div>
                               ))
@@ -274,10 +271,7 @@ export default function ApplicantDetailPage() {
                           <div className="flex flex-wrap gap-2 mt-1">
                             {applicant.certifications.length > 0 ? (
                               applicant.certifications.map((cert, idx) => (
-                                <div
-                                  key={idx}
-                                  className="bg-green-200 text-green-800 border-green-200 p-1 rounded-md"
-                                >
+                                <div key={idx} className=" text-green-800 ">
                                   {cert}
                                 </div>
                               ))
@@ -291,10 +285,7 @@ export default function ApplicantDetailPage() {
                           <div className="flex flex-wrap gap-2 mt-1">
                             {applicant.languages.length > 0 ? (
                               applicant.languages.map((lang, idx) => (
-                                <div
-                                  key={idx}
-                                  className="bg-green-200 text-green-800 border-green-200 p-1 rounded-md"
-                                >
+                                <div key={idx} className=" text-green-800 ">
                                   {lang}
                                 </div>
                               ))
@@ -316,22 +307,22 @@ export default function ApplicantDetailPage() {
                           <p className="text-sm text-gray-500">Status</p>
                           <div>
                             {applicant.status === "Accepted" ? (
-                              <div className="flex items-center bg-green-200 text-green-600 px-2 py-1 rounded-md">
+                              <div className="flex items-center  text-green-600 ">
                                 <CheckCircleIcon className="h-4 w-4 mr-1" />
                                 Accepted
                               </div>
                             ) : applicant.status === "Rejected" ? (
-                              <div className="flex items-center bg-red-200 text-red-600 px-2 py-1 rounded-md">
+                              <div className="flex items-center  text-red-600 ">
                                 <ClockIcon className="h-4 w-4 mr-1" />
                                 Rejected
                               </div>
                             ) : applicant.status === "Reviewed" ? (
-                              <div className="flex items-center bg-blue-200 text-blue-600 px-2 py-1 rounded-md">
+                              <div className="flex items-center  text-blue-600 ">
                                 <CheckCircleIcon className="h-4 w-4 mr-1" />
                                 Reviewed
                               </div>
                             ) : (
-                              <div className="flex items-center bg-gray-200 text-gray-600 px-2 py-1 rounded-md">
+                              <div className="flex items-center  text-gray-600">
                                 <ClockIcon className="h-4 w-4 mr-1" />
                                 Pending
                               </div>

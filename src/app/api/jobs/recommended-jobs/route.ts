@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session || !session.user.email) {
@@ -9,7 +10,7 @@ export async function GET() {
   }
 
   try {
-    // Fetch the user's studyArea
+    // Fetch the user's studyArea (now an array)
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { studyArea: true },
@@ -19,10 +20,13 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Fetch jobs filtered by user's studyArea
+    // Fetch jobs where the job's area is in the user's studyArea array
     const jobs = await prisma.job.findMany({
       where: {
-        area: user.studyArea || undefined, // Filter by studyArea, or fetch all if undefined
+        area:
+          user.studyArea && user.studyArea.length > 0
+            ? { in: user.studyArea }
+            : undefined, // Use 'in' for array matching
       },
       include: {
         qualifications: true,

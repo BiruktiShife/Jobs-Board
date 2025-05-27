@@ -186,7 +186,6 @@ function CompanyJobForm({ onSubmit }: CompanyJobFormProps) {
               <BsArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
             <CardTitle className="text-xl sm:text-2xl font-bold text-green-800 flex items-center">
-              <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 mr-3 text-green-600" />
               Create Job Posting
             </CardTitle>
           </div>

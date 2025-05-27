@@ -62,7 +62,7 @@ model User {
   emailVerified DateTime? 
   image         String?
   phone         String?   
-  studyArea     String?   
+  studyArea     String[]  
   role          Role      @default(JOB_SEEKER)
   companyId     String?
   company       Company?  @relation(name: "CompanyUsers", fields: [companyId], references: [id])

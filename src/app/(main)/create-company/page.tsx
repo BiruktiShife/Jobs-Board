@@ -7,22 +7,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { BsArrowRight, BsArrowLeft } from "react-icons/bs";
+import { BsArrowLeft } from "react-icons/bs";
 import {
   Building2,
   Image as ImageIcon,
   Info,
-  // Mail,
-  // Lock,
+  Mail,
+  Lock,
   CheckCircle2,
   AlertCircle,
   UserCog,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Label } from "@/components/ui/label";
 import { Upload } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function CreateCompanyPage() {
   const { data: session, status } = useSession();
@@ -31,6 +33,7 @@ export default function CreateCompanyPage() {
   const [, setLogo] = useState<string>("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [about, setAbout] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +63,7 @@ export default function CreateCompanyPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSubmitting(true);
     setError(null);
     setSuccess(null);
 
@@ -93,6 +97,8 @@ export default function CreateCompanyPage() {
     } catch (error) {
       console.error("Create company error:", error);
       setError("An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -227,17 +233,17 @@ export default function CreateCompanyPage() {
                   />
                 </div>
 
-                {/* <div className="pt-6 border-t border-gray-200">
+                <div className="pt-6 border-t border-gray-200">
                   <h3 className="flex items-center justify-center gap-2 text-lg font-semibold text-gray-800 mb-6">
                     <UserCog className="w-5 h-5 text-green-600" />
-                    Admin Account Details
+                    Account Details
                   </h3>
 
                   <div className="space-y-6">
                     <div className="space-y-2">
                       <Label className="flex items-center gap-2 text-gray-700 font-medium">
                         <Mail className="w-4 h-4 text-green-600" />
-                        Admin Email
+                        Email
                       </Label>
                       <Input
                         type="email"
@@ -264,16 +270,29 @@ export default function CreateCompanyPage() {
                       />
                     </div>
                   </div>
-                </div> */}
+                </div>
               </div>
 
               <Button
                 type="submit"
-                className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg shadow-md transition-all duration-200 flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className={cn(
+                  "w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition-all shadow-md",
+                  "flex items-center justify-center gap-2",
+                  isSubmitting && "opacity-80 cursor-not-allowed"
+                )}
               >
-                <CheckCircle2 className="w-5 h-5" />
-                Create Company
-                <BsArrowRight className="w-5 h-5" />
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Creating Company...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span>Create Company</span>
+                  </>
+                )}
               </Button>
             </form>
           </CardContent>

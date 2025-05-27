@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
-import { CustomTable } from "@/components/table";
-import JobCard from "@/utils/jobCard";
+import { CustomTable, TableData, ColumnName } from "@/components/table";
 import { useSession } from "next-auth/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 interface Job {
   id: string;
@@ -32,36 +33,25 @@ interface AppliedJob {
   appliedOn: string;
 }
 
-const JobCardSkeleton = () => {
-  return (
-    <div className="p-6 border rounded-lg shadow-sm bg-white">
-      <div className="flex items-center gap-4">
-        <Skeleton className="w-12 h-12 rounded-full" />
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-[200px]" />
-          <Skeleton className="h-4 w-[150px]" />
-        </div>
-      </div>
-      <Skeleton className="h-4 w-[250px] mt-4" />
-      <Skeleton className="h-4 w-[200px] mt-2" />
-      <div className="mt-4 space-y-2">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-3/4" />
-      </div>
-      <Skeleton className="h-10 w-[100px] mt-4" />
-    </div>
-  );
+interface BookmarkTableData {
+  id: string;
+  title: string;
+  company_name: string;
+}
+
+const isBookmarkTableData = (row: TableData): row is BookmarkTableData => {
+  return "id" in row && "title" in row && "company_name" in row;
 };
 
 const TableSkeleton = () => {
   return (
-    <div className="w-full border rounded-lg overflow-hidden">
-      <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50">
+    <div className="w-full border rounded-lg shadow-sm overflow-hidden">
+      <div className="grid grid-cols-3 gap-4 p-4 bg-gray-200">
         <Skeleton className="h-6 w-[150px]" />
         <Skeleton className="h-6 w-[100px]" />
         <Skeleton className="h-6 w-[150px]" />
       </div>
-      <div className="divide-y divide-gray-200">
+      <div className="divide-y divide-gray-300">
         {[...Array(5)].map((_, index) => (
           <div key={index} className="grid grid-cols-3 gap-4 p-4">
             <Skeleton className="h-4 w-[200px]" />
@@ -131,7 +121,7 @@ export default function JobSeeker() {
       />
       <main className="flex-1 p-8 bg-gray-100">
         <span className="flex justify-between">
-          <Header activeTab={activeTab} email={""} />
+          <Header activeTab={activeTab} email={session.user.email || ""} />
         </span>
 
         {activeTab === "Applied jobs" && (
@@ -141,6 +131,7 @@ export default function JobSeeker() {
             {!loading && !error && (
               <CustomTable
                 data={appliedJobs.map((job) => ({
+                  id: job.id,
                   title: job.title,
                   company: job.Company,
                   status: job.status,
@@ -153,24 +144,38 @@ export default function JobSeeker() {
         )}
         {activeTab === "bookmarks" && (
           <div>
-            {loading && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {[...Array(4)].map((_, index) => (
-                  <JobCardSkeleton key={index} />
-                ))}
-              </div>
-            )}
+            {loading && <TableSkeleton />}
             {error && <p className="text-red-500">{error}</p>}
             {!loading && !error && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {bookmarkedJobs.length > 0 ? (
-                  bookmarkedJobs.map((job) => (
-                    <JobCard key={job.id} jobData={job} />
-                  ))
-                ) : (
-                  <p>No bookmarked jobs found.</p>
-                )}
-              </div>
+              <CustomTable
+                data={bookmarkedJobs.map((job) => ({
+                  id: job.id,
+                  title: job.title,
+                  company_name: job.company_name,
+                }))}
+                columns={["Job Title", "Company Name", "Actions"]}
+                renderCell={(row: TableData, column: ColumnName) => {
+                  if (!isBookmarkTableData(row)) {
+                    return <span className="text-gray-500">N/A</span>;
+                  }
+                  switch (column) {
+                    case "Job Title":
+                      return <span>{row.title || "N/A"}</span>;
+                    case "Company Name":
+                      return <span>{row.company_name || "N/A"}</span>;
+                    case "Actions":
+                      return (
+                        <Link href={`/jobs/${row.id}`}>
+                          <Button className="bg-green-600 text-white hover:bg-green-700 px-4 py-1 rounded-md text-sm">
+                            View Details
+                          </Button>
+                        </Link>
+                      );
+                    default:
+                      return <span className="text-gray-500">N/A</span>;
+                  }
+                }}
+              />
             )}
           </div>
         )}

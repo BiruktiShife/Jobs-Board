@@ -220,7 +220,6 @@ export default function ApplicantDetails() {
               <BsArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-2xl sm:text-1xl font-bold text-green-800 flex items-center">
-              <BriefcaseIcon className="h-9 w-9 sm:h-8 sm:w-8 mr-3 text-green-600" />
               Applicants for {job?.title || "Job"}
             </h1>
           </div>
@@ -251,7 +250,7 @@ export default function ApplicantDetails() {
                   placeholder="Search by name or email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-full"
+                  className="pl-10 w-96"
                 />
               </div>
               <div className="flex flex-wrap gap-2">
@@ -262,7 +261,9 @@ export default function ApplicantDetails() {
                       className="flex items-center gap-2 bg-white hover:bg-gray-50 px-2 sm:px-4 py-1 sm:py-2"
                     >
                       <FilterIcon className="h-4 w-4 text-green-600" />
-                      <span className="text-sm sm:text-base">Career Level</span>
+                      <span className="font-light sm:text-base">
+                        Career Level
+                      </span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56 max-h-64 overflow-y-auto">
@@ -295,7 +296,9 @@ export default function ApplicantDetails() {
                       className="flex items-center gap-2 bg-white hover:bg-gray-50 px-2 sm:px-4 py-1 sm:py-2"
                     >
                       <FilterIcon className="h-4 w-4 text-green-600" />
-                      <span className="text-sm sm:text-base">Degree Type</span>
+                      <span className="font-light sm:text-base">
+                        Degree Type
+                      </span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56 max-h-64 overflow-y-auto">
@@ -332,7 +335,7 @@ export default function ApplicantDetails() {
                       className="flex items-center gap-2 bg-white hover:bg-gray-50 px-2 sm:px-4 py-1 sm:py-2"
                     >
                       <FilterIcon className="h-4 w-4 text-green-600" />
-                      <span className="text-sm sm:text-base">Status</span>
+                      <span className="font-light sm:text-base">Status</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56 max-h-64 overflow-y-auto">
@@ -474,12 +477,12 @@ export default function ApplicantDetails() {
                           </a>
                         </TableCell>
                         <TableCell className="text-sm sm:text-base p-2 sm:p-4">
-                          <div className="bg-purple-50 text-purple-800 border-purple-200 px-2 py-1 rounded-md">
+                          <div className=" text-purple-800 border-purple-200 ">
                             {applicant.careerLevel}
                           </div>
                         </TableCell>
                         <TableCell className="text-sm sm:text-base p-2 sm:p-4">
-                          <div className="bg-green-50 text-green-800 border-green-200 px-2 py-1 rounded-md">
+                          <div className=" text-green-800 border-green-200">
                             {applicant.degreeType}
                           </div>
                         </TableCell>
@@ -508,12 +511,12 @@ export default function ApplicantDetails() {
                                   <div
                                     className={`flex items-center ${
                                       status === "Accepted"
-                                        ? "text-green-600 px-2 py-1 rounded-md bg-green-200"
+                                        ? "text-green-600 "
                                         : status === "Rejected"
-                                        ? "text-red-600 px-2 py-1 rounded-md bg-red-200"
+                                        ? "text-red-600"
                                         : status === "Reviewed"
-                                        ? "text-blue-600 px-2 py-1 rounded-md bg-blue-200"
-                                        : "text-gray-600 px-2 py-1 rounded-md bg-gray-200"
+                                        ? "text-blue-600"
+                                        : "text-gray-600"
                                     }`}
                                   >
                                     {status}
