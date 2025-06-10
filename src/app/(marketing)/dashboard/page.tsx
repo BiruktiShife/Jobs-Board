@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { HomeSection } from "@/components/home-section";
 import JobCard from "@/utils/jobCard";
 import { Profile } from "@/components/header";
 import Link from "next/link";
@@ -9,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { HomeSection } from "@/components/home-section";
 
 interface Job {
   id: string;
@@ -23,13 +23,65 @@ interface Job {
   qualifications: string[];
   responsibilities: string[];
   requiredSkills: string[];
-  postedDate: string; // Added for sorting
+  postedDate: string;
 }
 
+const PaginationControls = ({
+  currentPage,
+  totalPages,
+  paginate,
+}: {
+  currentPage: number;
+  totalPages: number;
+  paginate: (page: number) => void;
+}) => (
+  <div className="flex justify-center items-center space-x-2 mt-4">
+    <button
+      onClick={() => paginate(currentPage - 1)}
+      disabled={currentPage === 1}
+      className={`px-3 py-1 rounded ${
+        currentPage === 1
+          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+          : "bg-green-500 text-white hover:bg-green-600"
+      }`}
+    >
+      Previous
+    </button>
+    {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+      <button
+        key={number}
+        onClick={() => paginate(number)}
+        className={`px-3 py-1 rounded ${
+          currentPage === number
+            ? "bg-green-600 text-white"
+            : "bg-gray-200 hover:bg-green-100"
+        }`}
+      >
+        {number}
+      </button>
+    ))}
+    <button
+      onClick={() => paginate(currentPage + 1)}
+      disabled={currentPage === totalPages}
+      className={`px-3 py-1 rounded ${
+        currentPage === totalPages
+          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+          : "bg-green-500 text-white hover:bg-green-600"
+      }`}
+    >
+      Next
+    </button>
+  </div>
+);
+
 export default function Dashboard() {
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [allJobs, setAllJobs] = useState<Job[]>([]);
+  const [recommendedJobs, setRecommendedJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [recommendedPage, setRecommendedPage] = useState(1);
+  const jobsPerPage = 6;
   const { data: session, status } = useSession();
   const router = useRouter();
 
@@ -47,30 +99,32 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await fetch("/api/jobs/recommended-jobs");
-        if (!response.ok) throw new Error("Failed to fetch recommended jobs");
-        const data = await response.json();
-        // Sort recommended jobs by postedDate (latest first)
-        const sortedData = data.sort(
-          (a: Job, b: Job) =>
-            new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime()
-        );
-        setJobs(sortedData);
+        setLoading(true);
+
+        // Fetch all jobs
+        const allJobsResponse = await fetch("/api/jobs");
+        if (!allJobsResponse.ok) throw new Error("Failed to fetch all jobs");
+        const allJobsData = await allJobsResponse.json();
+        setAllJobs(allJobsData);
+
+        // Fetch recommended jobs if user is JOB_SEEKER
+        if (session?.user?.role === "JOB_SEEKER") {
+          const recommendedResponse = await fetch("/api/jobs/recommended-jobs");
+          if (!recommendedResponse.ok)
+            throw new Error("Failed to fetch recommended jobs");
+          const recommendedData = await recommendedResponse.json();
+          setRecommendedJobs(recommendedData);
+        }
       } catch (err) {
-        console.error(err);
-        setError("Failed to load recommended jobs");
+        console.error("Error fetching jobs:", err);
+        setError(err instanceof Error ? err.message : "Failed to load jobs");
       } finally {
         setLoading(false);
       }
     };
 
-    if (
-      status === "authenticated" &&
-      session?.user?.role === "JOB_SEEKER" // Only fetch for JOB_SEEKER
-    ) {
+    if (status === "authenticated") {
       fetchJobs();
-    } else {
-      setLoading(false); // Skip loading for ADMIN
     }
   }, [status, session]);
 
@@ -93,6 +147,24 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  // Calculate pagination for main jobs section
+  const indexOfLastJob = currentPage * jobsPerPage;
+  const indexOfFirstJob = indexOfLastJob - jobsPerPage;
+  const currentJobs = allJobs.slice(indexOfFirstJob, indexOfLastJob);
+  const totalPages = Math.ceil(allJobs.length / jobsPerPage);
+
+  // Calculate pagination for recommended section
+  const indexOfLastRecommended = recommendedPage * jobsPerPage;
+  const indexOfFirstRecommended = indexOfLastRecommended - jobsPerPage;
+  const currentRecommendedJobs = recommendedJobs.slice(
+    indexOfFirstRecommended,
+    indexOfLastRecommended
+  );
+  const totalRecommendedPages = Math.ceil(recommendedJobs.length / jobsPerPage);
+
+  const showSplitLayout =
+    recommendedJobs.length > 3 && session.user.role === "JOB_SEEKER";
 
   return (
     <div className="flex flex-col min-h-screen pt-10 sm:pt-12 overflow-x-hidden">
@@ -128,36 +200,88 @@ export default function Dashboard() {
           <Profile email={session.user.email} />
         </div>
       </nav>
-      {jobs.length < 3 || session.user.role === "ADMIN" ? (
-        <div className="w-full p-3 sm:p-8">
-          <HomeSection
-            recommendedJobs={session.user.role === "ADMIN" ? [] : jobs}
-            userRole={session.user.role}
-          />
-        </div>
-      ) : (
-        <div className="flex flex-col md:flex-row gap-4 md:gap-8 p-3 sm:p-8">
-          <aside className="w-full md:w-1/3 md:border-l md:pl-6 order-1 md:order-2 hidden md:block">
-            <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-800">
-              Recommended Jobs
-            </h2>
-            <div className="space-y-2 sm:space-y-4">
-              {jobs.length > 0 ? (
-                jobs.map((job) => (
+      <div className="p-3 sm:p-8">
+        {!showSplitLayout ? (
+          <div className="space-y-4">
+            <HomeSection
+              recommendedJobs={[]}
+              userRole={session.user.role}
+              hideJobsSection={true}
+            />
+            <div className="container mx-auto px-4 sm:px-6">
+              <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-8">
+                Available Jobs
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {currentJobs.map((job) => (
                   <JobCard key={job.id} jobData={job} className="w-full" />
-                ))
-              ) : (
-                <p className="text-gray-600 text-xs sm:text-base">
-                  No recommended jobs match your study area yet.
-                </p>
+                ))}
+              </div>
+              {allJobs.length > 0 && (
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  paginate={setCurrentPage}
+                />
               )}
             </div>
-          </aside>
-          <div className="w-full md:w-2/3 space-y-3 sm:space-y-6 order-2 md:order-1">
-            <HomeSection recommendedJobs={jobs} userRole={session.user.role} />
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex flex-col gap-4">
+            <HomeSection
+              recommendedJobs={[]}
+              userRole={session.user.role}
+              hideJobsSection={true}
+            />
+            <div className="flex flex-col md:flex-row gap-4 md:gap-8">
+              <div className="w-full md:w-2/3 space-y-3 sm:space-y-6 order-2 md:order-1">
+                <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-800">
+                  All Jobs
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {currentJobs.map((job) => (
+                    <JobCard key={job.id} jobData={job} className="w-full" />
+                  ))}
+                </div>
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  paginate={setCurrentPage}
+                />
+              </div>
+              <aside className="w-full md:w-1/3 md:border-l md:pl-6 order-1 md:order-2">
+                <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-800">
+                  Recommended Jobs
+                </h2>
+                <div className="space-y-2 sm:space-y-4">
+                  {recommendedJobs.length > 0 ? (
+                    <>
+                      <div className="grid grid-cols-1 gap-4">
+                        {currentRecommendedJobs.map((job) => (
+                          <JobCard
+                            key={job.id}
+                            jobData={job}
+                            className="w-full"
+                          />
+                        ))}
+                      </div>
+                      <PaginationControls
+                        currentPage={recommendedPage}
+                        totalPages={totalRecommendedPages}
+                        paginate={setRecommendedPage}
+                      />
+                    </>
+                  ) : (
+                    <p className="text-gray-600 text-xs sm:text-base">
+                      No recommended jobs match your study area yet.
+                    </p>
+                  )}
+                </div>
+              </aside>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -108,3 +108,45 @@ export async function GET() {
     );
   }
 }
+
+export async function DELETE(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { jobId } = await request.json();
+  if (!jobId) {
+    return NextResponse.json({ error: "Job ID is required" }, { status: 400 });
+  }
+
+  try {
+    const bookmark = await prisma.bookmark.findFirst({
+      where: {
+        userId: session.user.id,
+        jobId: jobId,
+      },
+    });
+
+    if (!bookmark) {
+      return NextResponse.json(
+        { error: "Bookmark not found" },
+        { status: 404 }
+      );
+    }
+
+    await prisma.bookmark.delete({
+      where: {
+        id: bookmark.id,
+      },
+    });
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error) {
+    console.error("Delete bookmark error:", error);
+    return NextResponse.json(
+      { error: "Failed to delete bookmark" },
+      { status: 500 }
+    );
+  }
+}

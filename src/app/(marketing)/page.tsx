@@ -15,7 +15,7 @@ import {
 import JobCard from "@/utils/jobCard";
 import { CategoryCard } from "@/utils/CategoryCard";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Category = {
   icon: React.ReactNode;
@@ -36,6 +36,25 @@ interface Job {
   responsibilities: string[];
   requiredSkills: string[];
 }
+
+const JobCardSkeleton = () => {
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6 space-y-4">
+      <div className="flex items-center space-x-4">
+        <Skeleton className="h-12 w-12 rounded-full" />
+        <div className="space-y-2 flex-1">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+      </div>
+      <Skeleton className="h-20 w-full" />
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-8 w-24" />
+        <Skeleton className="h-8 w-24" />
+      </div>
+    </div>
+  );
+};
 
 export default function Home() {
   const categories: Category[] = [
@@ -287,13 +306,15 @@ export default function Home() {
 
       <section className="container mx-auto px-6 py-12">
         <h2 className="text-3xl font-bold text-center mb-8">All Jobs</h2>
-        {loading && (
-          <div className="flex justify-center">
-            <Loader2 className="w-10 h-10 animate-spin text-green-600" />
+        {loading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, index) => (
+              <JobCardSkeleton key={index} />
+            ))}
           </div>
-        )}
-        {error && <p className="text-red-500 text-center">{error}</p>}
-        {!loading && !error && (
+        ) : error ? (
+          <p className="text-red-500 text-center">{error}</p>
+        ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {filteredJobs.length === 0 ? (
               <p className="text-center text-gray-500">

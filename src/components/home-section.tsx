@@ -40,6 +40,7 @@ interface Job {
 interface HomeSectionProps {
   recommendedJobs: Job[];
   userRole?: string;
+  hideJobsSection?: boolean;
 }
 
 const JobCardSkeleton = () => {
@@ -63,7 +64,11 @@ const JobCardSkeleton = () => {
   );
 };
 
-export function HomeSection({ recommendedJobs, userRole }: HomeSectionProps) {
+export function HomeSection({
+  recommendedJobs,
+  userRole,
+  hideJobsSection = false,
+}: HomeSectionProps) {
   const categories: Category[] = [
     {
       icon: <FaLaptopCode className="w-5 sm:w-6 h-5 sm:h-6" />,
@@ -238,25 +243,25 @@ export function HomeSection({ recommendedJobs, userRole }: HomeSectionProps) {
       >
         <div className="absolute inset-0 bg-white/80 sm:bg-gray-100/75"></div>
         <div className="w-full md:w-1/2 px-4 sm:px-6 text-center md:text-left ml-0 sm:ml-12 relative z-10">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-3">
             Find Your Dream Job Today!
           </h1>
-          <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-6 sm:mb-8">
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-4 sm:mb-6">
             Join thousands of candidates and employers on JobBoard.
           </p>
         </div>
-        <div className="w-full md:w-1/2 px-4 sm:px-6 mt-2 sm:mt-4 md:mt-0 relative z-10 flex flex-col items-center">
+        <div className="w-full md:w-1/2 px-4 sm:px-6 mt-0 sm:mt-2 md:mt-0 relative z-10 flex flex-col items-center">
           <Image
             src="/image.png"
             alt="Sample Image"
-            width={160}
-            height={128}
-            className="w-40 sm:w-60 md:w-80 h-auto mx-auto"
+            width={120}
+            height={96}
+            className="w-32 sm:w-40 md:w-48 h-auto mx-auto"
           />
-          <div className="w-full max-w-full sm:max-w-lg md:max-w-2xl mx-auto mt-2 sm:mt-4">
-            <div className="relative flex items-center bg-white p-1 sm:p-2 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+          <div className="w-full max-w-full sm:max-w-lg md:max-w-xl mx-auto mt-2">
+            <div className="relative flex items-center bg-white p-1 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
               <svg
-                className="w-5 sm:w-6 h-5 sm:h-6 text-gray-400 ml-2 sm:ml-3"
+                className="w-4 sm:w-5 h-4 sm:h-5 text-gray-400 ml-2"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -271,13 +276,13 @@ export function HomeSection({ recommendedJobs, userRole }: HomeSectionProps) {
               <Input
                 type="text"
                 placeholder="Search by company name or job title..."
-                className="flex-grow border-none py-2 sm:py-3 px-3 sm:px-4 text-sm sm:text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-0"
+                className="flex-grow border-none py-1.5 sm:py-2 px-2 sm:px-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-0"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSearch()}
               />
               <Button
-                className="bg-green-600 text-white hover:bg-green-700 px-4 sm:px-6 py-1 sm:py-2 rounded-md whitespace-nowrap transition-colors duration-200 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                className="bg-green-600 text-white hover:bg-green-700 px-3 sm:px-4 py-1 rounded-md whitespace-nowrap transition-colors duration-200 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                 onClick={handleSearch}
               >
                 Search
@@ -287,7 +292,7 @@ export function HomeSection({ recommendedJobs, userRole }: HomeSectionProps) {
         </div>
       </section>
 
-      {userRole !== "ADMIN" && (
+      {userRole !== "ADMIN" && !hideJobsSection && (
         <section className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 md:hidden">
           <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-800">
             Recommended Jobs
@@ -352,44 +357,46 @@ export function HomeSection({ recommendedJobs, userRole }: HomeSectionProps) {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 sm:px-6 py-6 sm:py-12">
-        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-8">
-          Jobs
-        </h2>
-        {loading ? (
-          <div
-            className="grid lg:grid-cols-3 sm:grid-cols-1 gap-4 sm:gap-6 jobs-grid"
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fill, minmax(250px, 1fr)) !important",
-            }}
-          >
-            {[...Array(3)].map((_, index) => (
-              <JobCardSkeleton key={index} />
-            ))}
-          </div>
-        ) : error ? (
-          <p className="text-red-500 text-sm sm:text-base">{error}</p>
-        ) : filteredJobs.length > 0 ? (
-          <div
-            className="grid sm:grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 jobs-grid"
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fill, minmax(250px, 1fr)) !important",
-            }}
-          >
-            {filteredJobs.map((job) => (
-              <JobCard key={job.id} jobData={job} className="w-full" />
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-gray-600 text-sm sm:text-base">
-            No jobs found matching your search or category.
-          </p>
-        )}
-      </section>
+      {!hideJobsSection && (
+        <section className="container mx-auto px-4 sm:px-6 py-6 sm:py-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4 sm:mb-8">
+            Jobs
+          </h2>
+          {loading ? (
+            <div
+              className="grid lg:grid-cols-3 sm:grid-cols-1 gap-4 sm:gap-6 jobs-grid"
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fill, minmax(250px, 1fr)) !important",
+              }}
+            >
+              {[...Array(3)].map((_, index) => (
+                <JobCardSkeleton key={index} />
+              ))}
+            </div>
+          ) : error ? (
+            <p className="text-red-500 text-sm sm:text-base">{error}</p>
+          ) : filteredJobs.length > 0 ? (
+            <div
+              className="grid sm:grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 jobs-grid"
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fill, minmax(250px, 1fr)) !important",
+              }}
+            >
+              {filteredJobs.map((job) => (
+                <JobCard key={job.id} jobData={job} className="w-full" />
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-gray-600 text-sm sm:text-base">
+              No jobs found matching your search or category.
+            </p>
+          )}
+        </section>
+      )}
     </div>
   );
 }

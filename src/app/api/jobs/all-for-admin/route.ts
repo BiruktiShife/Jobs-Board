@@ -26,6 +26,8 @@ export async function GET() {
       company: job.company.name,
       postedDate: job.created_at.toISOString().split("T")[0],
       applications: job.applications.length,
+      deadline: job.deadline.toISOString(),
+      status: job.status || "PENDING",
     }));
 
     return NextResponse.json(jobData, { status: 200 });

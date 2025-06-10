@@ -29,25 +29,21 @@ export async function GET() {
         companyId: company.id,
       },
       include: {
-        applications: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            careerLevel: true,
-            skills: true,
-            degreeType: true,
-            certifications: true,
-            languages: true,
-            createdAt: true,
-          },
-        },
+        applications: true,
       },
     });
 
     return NextResponse.json({
       companyName: company.name,
-      jobs: jobs,
+      jobs: jobs.map((job) => ({
+        id: job.id,
+        title: job.title,
+        area: job.area,
+        location: job.location,
+        deadline: job.deadline,
+        status: job.status || "PENDING",
+        applications: job.applications,
+      })),
     });
   } catch (error) {
     console.error("Error fetching jobs:", error);

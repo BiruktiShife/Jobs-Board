@@ -46,29 +46,40 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email and password are required");
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          });
 
-        if (!user || !user.password) {
-          throw new Error("No user found or invalid login method");
+          if (!user || !user.password) {
+            throw new Error("No user found or invalid login method");
+          }
+
+          const isValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+          if (!isValid) {
+            throw new Error("Invalid password");
+          }
+
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            companyId: user.companyId,
+          } as CustomUser;
+        } catch (error: Error | unknown) {
+          const err = error as Error;
+          console.error("Auth error:", err);
+          if (err.message.includes("connect")) {
+            throw new Error(
+              "Service temporarily unavailable. Please try again later."
+            );
+          }
+          throw error;
         }
-
-        const isValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-        if (!isValid) {
-          throw new Error("Invalid password");
-        }
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          companyId: user.companyId,
-        } as CustomUser;
       },
     }),
   ],

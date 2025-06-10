@@ -7,22 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Loader2,
-  Upload,
-  CheckCircle2,
-  AlertCircle,
-  User,
-  Mail,
-  Phone,
-  BookOpen,
-} from "lucide-react";
+import { Loader2, Upload, CheckCircle2, AlertCircle } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { BsArrowLeft } from "react-icons/bs";
-import { motion } from "framer-motion";
-import { MultiSelect } from "@/components/ui/multi-select"; // Replace with your actual MultiSelect component
+import { MultiSelect } from "@/components/ui/multi-select";
 
 export default function ManageProfile() {
   const { data: session } = useSession();
@@ -59,7 +49,10 @@ export default function ManageProfile() {
     "Logistics",
     "Research",
     "Customer Support",
-  ];
+  ].map((area: string) => ({
+    value: area,
+    label: area,
+  }));
 
   const pinataRewriteUrl = (url: string | null | undefined): string => {
     if (!url) return "";
@@ -112,7 +105,7 @@ export default function ManageProfile() {
     fetchProfile();
   }, [session]);
 
-  // Determine if there are any changes
+  // Update hasChanges to compare string arrays
   const hasChanges =
     name !== initialName ||
     phone !== initialPhone ||
@@ -136,7 +129,7 @@ export default function ManageProfile() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!hasChanges) return; // Prevent submission if no changes
+    if (!hasChanges) return;
     setIsSubmitting(true);
     setError(null);
     setSuccess(null);
@@ -177,7 +170,13 @@ export default function ManageProfile() {
     }
 
     try {
-      const profileData = { name, phone, studyArea, image: imageUrl };
+      const profileData = {
+        name,
+        phone,
+        studyArea,
+        image: imageUrl,
+      };
+
       const response = await fetch("/api/user/profile", {
         method: "PUT",
         headers: {
@@ -201,6 +200,7 @@ export default function ManageProfile() {
             : []
         );
         setProfileImage(pinataRewriteUrl(updatedData.image));
+
         // Update initial values after successful save
         setInitialName(updatedData.name || "");
         setInitialPhone(updatedData.phone || "");
@@ -249,62 +249,57 @@ export default function ManageProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-8 px-4 sm:px-6 lg:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-md mx-auto"
-      >
-        <Card className="w-full shadow-lg rounded-xl overflow-hidden border-0">
-          <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 relative">
-            <div className="absolute top-4 left-4">
-              <Link
-                href={
-                  session?.user?.role === "COMPANY_ADMIN"
-                    ? "/dashboard/company"
-                    : "/dashboard"
-                }
-                className="text-white hover:text-green-200 transition-colors"
-              >
-                <BsArrowLeft className="w-6 h-6" />
-              </Link>
-            </div>
-            <div className="text-center pt-2">
-              <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
-                <User className="w-6 h-6" />
-                Edit Profile
-              </CardTitle>
-              <p className="text-green-100 mt-1 text-sm">
-                Update your personal information
-              </p>
-            </div>
-          </CardHeader>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-gray-50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="flex items-center gap-2 text-green-600 hover:text-green-700 transition-colors duration-200">
+          <Link
+            href={
+              session?.user?.role === "ADMIN"
+                ? "/admin"
+                : session?.user?.role === "COMPANY_ADMIN"
+                ? "/dashboard/company"
+                : "/job-seeker"
+            }
+            className="flex items-center gap-2 hover:scale-105 transform transition-transform duration-200"
+          >
+            <BsArrowLeft className="w-5 h-5" />
+            <span className="font-medium">Back to Dashboard</span>
+          </Link>
+        </div>
 
-          <CardContent className="p-6 bg-white">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="flex flex-col items-center">
+        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+          <CardHeader className="border-b border-gray-100 pb-7 space-y-1">
+            <CardTitle className="text-2xl font-bold text-gray-800">
+              Manage Profile
+            </CardTitle>
+            <p className="text-gray-500 text-sm">
+              Update your information and manage your preferences
+            </p>
+          </CardHeader>
+          <CardContent className="pt-7">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <div className="flex flex-col items-center gap-6">
                 <div className="relative group">
                   {preview || profileImage ? (
-                    <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-green-100 shadow-md group-hover:shadow-lg transition-all">
+                    <div className="relative w-36 h-36 rounded-full overflow-hidden border-4 border-green-100 shadow-md group-hover:shadow-xl group-hover:border-green-200 transition-all duration-300">
                       <Image
                         src={preview || profileImage}
                         alt="Profile Preview"
                         fill
-                        className="object-cover"
+                        className="object-cover transform group-hover:scale-105 transition-transform duration-300"
                         onError={() => setProfileImage("")}
                       />
                     </div>
                   ) : (
-                    <Avatar className="w-32 h-32 border-4 border-green-100 shadow-md">
-                      <AvatarFallback className="bg-green-100 text-green-700 text-4xl font-medium">
+                    <Avatar className="w-36 h-36 border-4 border-green-100 shadow-md group-hover:shadow-xl group-hover:border-green-200 transition-all duration-300">
+                      <AvatarFallback className="bg-gradient-to-br from-green-100 to-green-50 text-green-700 text-5xl font-medium">
                         {name ? name.charAt(0).toUpperCase() : "U"}
                       </AvatarFallback>
                     </Avatar>
                   )}
                   <label
                     htmlFor="profileImage"
-                    className="absolute -bottom-2 -right-2 bg-green-600 hover:bg-green-700 text-white p-2 rounded-full cursor-pointer transition-all shadow-lg flex items-center justify-center"
+                    className="absolute -bottom-2 -right-2 bg-green-600 hover:bg-green-700 text-white p-3 rounded-full cursor-pointer transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center"
                   >
                     <Upload className="w-5 h-5" />
                     <Input
@@ -316,133 +311,114 @@ export default function ManageProfile() {
                     />
                   </label>
                 </div>
-                <p className="text-xs text-gray-500 mt-3">
+                <p className="text-sm text-gray-500 bg-gray-50 px-4 py-2 rounded-full">
                   JPG, GIF or PNG. Max 2MB
                 </p>
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <Label
-                    htmlFor="name"
-                    className="flex items-center gap-2 text-gray-700"
-                  >
-                    <User className="w-4 h-4 text-green-600" />
+              <div className="grid gap-8 md:grid-cols-2">
+                <div className="space-y-2.5">
+                  <Label htmlFor="name" className="text-gray-700 font-medium">
                     Full Name
                   </Label>
                   <Input
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g., John Doe"
-                    className="focus:ring-green-500 focus:border-green-500 border-gray-300"
+                    className="w-full transition-all duration-200 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200"
+                    placeholder="Enter your full name"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <Label
-                    htmlFor="email"
-                    className="flex items-center gap-2 text-gray-700"
-                  >
-                    <Mail className="w-4 h-4 text-green-600" />
-                    Email Address
+                <div className="space-y-2.5">
+                  <Label htmlFor="email" className="text-gray-700 font-medium">
+                    Email
                   </Label>
                   <Input
                     id="email"
                     value={email}
                     disabled
-                    className="bg-gray-100 text-gray-600 cursor-not-allowed"
+                    className="w-full bg-gray-50/80 text-gray-500 cursor-not-allowed"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <Label
-                    htmlFor="phone"
-                    className="flex items-center gap-2 text-gray-700"
-                  >
-                    <Phone className="w-4 h-4 text-green-600" />
+                <div className="space-y-2.5">
+                  <Label htmlFor="phone" className="text-gray-700 font-medium">
                     Phone Number
                   </Label>
                   <Input
                     id="phone"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="e.g., +251 923-456-7891"
-                    className="focus:ring-green-500 focus:border-green-500 border-gray-300"
+                    className="w-full transition-all duration-200 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200"
+                    placeholder="Enter your phone number"
                   />
                 </div>
-
-                {session?.user?.role === "JOB_SEEKER" && (
-                  <div className="space-y-1">
-                    <Label
-                      htmlFor="studyArea"
-                      className="flex items-center gap-2 text-gray-700"
-                    >
-                      <BookOpen className="w-4 h-4 text-green-600" />
-                      Study Areas
-                    </Label>
-                    <MultiSelect
-                      options={studyAreaOptions.map((option) => ({
-                        value: option,
-                        label: option,
-                      }))}
-                      selected={studyArea}
-                      onChange={setStudyArea}
-                      placeholder="Select your study areas"
-                      className="focus:ring-green-500 focus:border-green-500 border-gray-300"
-                    />
-                  </div>
-                )}
               </div>
 
+              {session?.user?.role === "JOB_SEEKER" && (
+                <div className="space-y-3 pt-2">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="studyArea"
+                      className="text-gray-700 font-medium"
+                    >
+                      Study Area
+                    </Label>
+                    <p className="text-sm text-gray-500 bg-gray-50/80 p-3 rounded-lg border border-gray-100">
+                      Choose your study areas to see recommended jobs that match
+                      your interests and expertise. This helps us provide more
+                      relevant job suggestions.
+                    </p>
+                  </div>
+                  <div className="relative">
+                    <MultiSelect
+                      selected={studyArea}
+                      options={studyAreaOptions}
+                      onChange={setStudyArea}
+                      className="w-full"
+                      placeholder="Select your areas of study"
+                    />
+                  </div>
+                </div>
+              )}
+
               {error && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-start gap-2 p-3 bg-red-50 text-red-700 rounded-md border border-red-200"
-                >
-                  <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm">{error}</p>
-                </motion.div>
+                <div className="flex items-center gap-2 text-red-600 bg-red-50/80 p-4 rounded-lg border border-red-100">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <p className="text-sm font-medium">{error}</p>
+                </div>
               )}
 
               {success && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-start gap-2 p-3 bg-green-50 text-green-700 rounded-md border border-green-200"
-                >
-                  <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm">{success}</p>
-                </motion.div>
+                <div className="flex items-center gap-2 text-green-600 bg-green-50/80 p-4 rounded-lg border border-green-100">
+                  <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                  <p className="text-sm font-medium">{success}</p>
+                </div>
               )}
 
               <Button
                 type="submit"
-                disabled={isSubmitting || !hasChanges}
                 className={cn(
-                  "w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition-all shadow-md",
-                  "flex items-center justify-center gap-2",
-                  (isSubmitting || !hasChanges) &&
-                    "opacity-80 cursor-not-allowed"
+                  "w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-medium py-2.5 rounded-lg transition-all duration-300 transform hover:translate-y-[-1px] hover:shadow-lg",
+                  (!hasChanges || isSubmitting) &&
+                    "opacity-50 cursor-not-allowed hover:translate-y-0 hover:shadow-none"
                 )}
+                disabled={!hasChanges || isSubmitting}
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Saving Changes...</span>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Updating...
                   </>
                 ) : (
-                  <>
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>Save Changes</span>
-                  </>
+                  "Save Changes"
                 )}
               </Button>
             </form>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   );
 }

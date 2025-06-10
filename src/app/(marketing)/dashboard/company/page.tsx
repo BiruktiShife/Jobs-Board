@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -16,15 +17,28 @@ import {
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Profile } from "@/components/header";
 import {
-  ArrowRight,
   Briefcase,
-  Calendar,
-  FileText,
   Loader2,
-  MapPin,
+  EllipsisVerticalIcon,
   PlusCircle,
-  Users,
+  Search,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Badge } from "@/components/ui/badge";
 
 interface Job {
   id: string;
@@ -33,6 +47,7 @@ interface Job {
   location: string;
   deadline: string;
   applications: Application[];
+  status?: string;
 }
 
 interface Application {
@@ -54,6 +69,9 @@ export default function CompanyDashboard() {
   const [companyName, setCompanyName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [titleFilter, setTitleFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const jobsPerPage = 10;
 
   useEffect(() => {
     if (status === "loading") return;
@@ -91,6 +109,34 @@ export default function CompanyDashboard() {
 
   const handleViewApplicants = (jobId: string) => {
     router.push(`/applicants-detail/${jobId}`);
+  };
+
+  // Filter jobs based on title
+  const filteredJobs = jobs.filter((job) =>
+    job.title.toLowerCase().includes(titleFilter.toLowerCase())
+  );
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredJobs.length / jobsPerPage);
+  const startIndex = (currentPage - 1) * jobsPerPage;
+  const endIndex = startIndex + jobsPerPage;
+  const currentJobs = filteredJobs.slice(startIndex, endIndex);
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= currentPage - 1 && i <= currentPage + 1)
+      ) {
+        pages.push(i);
+      } else if (i === currentPage - 2 || i === currentPage + 2) {
+        pages.push("...");
+      }
+    }
+    return pages;
   };
 
   if (status === "loading" || loading) {
@@ -132,133 +178,184 @@ export default function CompanyDashboard() {
 
         <Tabs defaultValue="jobs" className="space-y-6 w-full">
           <TabsContent value="jobs">
-            <Card className="shadow-lg hover:shadow-xl transition-shadow border border-green-100 w-full">
-              <CardHeader className="bg-green-50 rounded-t-lg">
-                <CardTitle className="text-lg sm:text-xl font-semibold text-green-800 flex items-center py-3">
-                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                  Posted Jobs
-                </CardTitle>
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <CardTitle className="text-xl font-semibold text-green-800">
+                    Posted Jobs
+                  </CardTitle>
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+                    <Input
+                      placeholder="Filter by job title..."
+                      value={titleFilter}
+                      onChange={(e) => {
+                        setTitleFilter(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="pl-8"
+                    />
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6">
+              <CardContent>
                 {jobs.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="mx-auto w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                      <Briefcase className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
+                  <div className="flex min-h-[400px] flex-col items-center justify-center rounded-md border border-dashed p-8 text-center animate-in fade-in-50">
+                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gray-100">
+                      <Briefcase className="h-10 w-10 text-gray-500" />
                     </div>
-                    <h3 className="text-base sm:text-lg font-medium text-gray-900">
-                      No jobs posted yet
+                    <h3 className="mt-4 text-lg font-semibold">
+                      No jobs posted
                     </h3>
-                    <p className="mt-2 text-sm sm:text-base text-gray-500">
-                      Get started by posting your first job opening
+                    <p className="mb-4 mt-2 text-sm text-gray-500">
+                      You haven&apos;t posted any jobs yet. Start by creating
+                      your first job posting.
                     </p>
                     <Button
-                      className="mt-4 bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto px-3 sm:px-4 py-2"
                       onClick={() => router.push("/jobs/company-job-form")}
+                      className="relative inline-flex items-center bg-green-600 hover:bg-green-700"
                     >
-                      <PlusCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                      <PlusCircle className="mr-2 h-4 w-4" />
                       Post a Job
                     </Button>
                   </div>
+                ) : filteredJobs.length === 0 ? (
+                  <div className="flex min-h-[400px] flex-col items-center justify-center rounded-md border border-dashed p-8 text-center animate-in fade-in-50">
+                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gray-100">
+                      <Search className="h-10 w-10 text-gray-500" />
+                    </div>
+                    <h3 className="mt-4 text-lg font-semibold">
+                      No matching jobs found
+                    </h3>
+                    <p className="mb-4 mt-2 text-sm text-gray-500">
+                      Try adjusting your search criteria
+                    </p>
+                  </div>
                 ) : (
-                  <div className="rounded-lg border border-gray-200 overflow-x-auto">
-                    <Table className="min-w-full">
-                      <TableHeader className="bg-gray-50">
-                        <TableRow>
-                          <TableHead className="min-w-[150px] sm:min-w-[200px] text-sm sm:text-base p-2 sm:p-4">
-                            <span className="inline-flex items-center">
-                              <FileText className="h-4 w-4 mr-2 text-green-600" />
-                              Title
-                            </span>
-                          </TableHead>
-                          <TableHead className="text-sm sm:text-base p-2 sm:p-4">
-                            <span className="inline-flex items-center">
-                              <MapPin className="h-4 w-4 mr-2 text-green-600" />
-                              Area
-                            </span>
-                          </TableHead>
-                          <TableHead className="text-sm sm:text-base p-2 sm:p-4">
-                            <span className="inline-flex items-center">
-                              <MapPin className="h-4 w-4 mr-2 text-green-600" />
-                              Location
-                            </span>
-                          </TableHead>
-                          <TableHead className="text-sm sm:text-base p-2 sm:p-4">
-                            <span className="inline-flex items-center">
-                              <Calendar className="h-4 w-4 mr-2 text-green-600" />
-                              Deadline
-                            </span>
-                          </TableHead>
-                          <TableHead className="text-sm sm:text-base p-2 sm:p-4">
-                            <span className="inline-flex items-center">
-                              <Users className="h-4 w-4 mr-2 text-green-600" />
-                              Applicants
-                            </span>
-                          </TableHead>
-                          <TableHead className="text-right text-sm sm:text-base p-2 sm:p-4">
-                            Details
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {jobs.map((job) => {
-                          const isDeadlinePassed =
-                            new Date(job.deadline) < new Date();
-                          return (
-                            <TableRow
-                              key={job.id}
-                              className="hover:bg-green-50"
-                            >
-                              <TableCell className="font-medium text-sm sm:text-base p-2 sm:p-4">
+                  <div className="space-y-4">
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Title</TableHead>
+                            <TableHead>Area</TableHead>
+                            <TableHead>Location</TableHead>
+                            <TableHead>Deadline</TableHead>
+                            <TableHead>Applicants</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">
+                              Actions
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {currentJobs.map((job) => (
+                            <TableRow key={job.id}>
+                              <TableCell className="font-medium">
                                 {job.title}
                               </TableCell>
-                              <TableCell className="text-sm sm:text-base p-2 sm:p-4">
-                                <div className="font-medium text-blue-800 px-2 py-1 rounded-md">
-                                  {job.area}
-                                </div>
+                              <TableCell>{job.area}</TableCell>
+                              <TableCell>{job.location}</TableCell>
+                              <TableCell>
+                                {new Date(job.deadline).toLocaleDateString()}
                               </TableCell>
-                              <TableCell className="text-sm sm:text-base p-2 sm:p-4">
-                                {job.location}
-                              </TableCell>
-                              <TableCell className="text-sm sm:text-base p-2 sm:p-4">
-                                <div
-                                  className={`flex items-center font-medium text-purple-800 px-2 py-1 rounded-md ${
-                                    isDeadlinePassed
-                                      ? "text-red-600"
-                                      : "text-gray-700"
-                                  }`}
+                              <TableCell>{job.applications.length}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={
+                                    job.status === "APPROVED"
+                                      ? "success"
+                                      : job.status === "REJECTED"
+                                      ? "destructive"
+                                      : "secondary"
+                                  }
                                 >
-                                  <Calendar className="h-4 w-4 mr-2" />
-                                  {new Date(job.deadline).toLocaleDateString()}
-                                  {isDeadlinePassed && (
-                                    <span className="ml-2 text-xs font-medium text-red-500">
-                                      (Closed)
-                                    </span>
-                                  )}
-                                </div>
+                                  {job.status || "PENDING"}
+                                </Badge>
                               </TableCell>
-                              <TableCell className="text-sm sm:text-base p-2 sm:p-4">
-                                <div className="flex items-center">
-                                  <Users className="h-4 w-4 mr-2 text-green-600" />
-                                  <div className="text-green-800 font-medium">
-                                    {job.applications.length}
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right p-2 sm:p-4">
-                                <Button
-                                  variant="outline"
-                                  className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto px-3 sm:px-4 py-2"
-                                  onClick={() => handleViewApplicants(job.id)}
-                                >
-                                  View
-                                  <ArrowRight className="h-4 w-4 ml-2" />
-                                </Button>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <span className="sr-only">Open menu</span>
+                                      <EllipsisVerticalIcon className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleViewApplicants(job.id)
+                                      }
+                                    >
+                                      View Applicants
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </TableCell>
                             </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    {filteredJobs.length > jobsPerPage && (
+                      <div className="mt-4 flex justify-center">
+                        <Pagination>
+                          <PaginationContent>
+                            <PaginationItem>
+                              <PaginationPrevious
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  if (currentPage > 1)
+                                    setCurrentPage(currentPage - 1);
+                                }}
+                                className={
+                                  currentPage === 1
+                                    ? "pointer-events-none opacity-50"
+                                    : ""
+                                }
+                              />
+                            </PaginationItem>
+                            {getPageNumbers().map((page, index) => (
+                              <PaginationItem key={index}>
+                                {page === "..." ? (
+                                  <PaginationEllipsis />
+                                ) : (
+                                  <PaginationLink
+                                    href="#"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setCurrentPage(page as number);
+                                    }}
+                                    isActive={currentPage === page}
+                                  >
+                                    {page}
+                                  </PaginationLink>
+                                )}
+                              </PaginationItem>
+                            ))}
+                            <PaginationItem>
+                              <PaginationNext
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  if (currentPage < totalPages)
+                                    setCurrentPage(currentPage + 1);
+                                }}
+                                className={
+                                  currentPage === totalPages
+                                    ? "pointer-events-none opacity-50"
+                                    : ""
+                                }
+                              />
+                            </PaginationItem>
+                          </PaginationContent>
+                        </Pagination>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>

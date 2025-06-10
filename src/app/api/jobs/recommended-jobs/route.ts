@@ -28,11 +28,36 @@ export async function GET() {
             ? { in: user.studyArea }
             : undefined, // Use 'in' for array matching
       },
-      include: {
-        qualifications: true,
-        responsibilities: true,
-        requiredSkills: true,
-        company: true,
+      select: {
+        id: true,
+        title: true,
+        area: true,
+        logo: true,
+        about_job: true,
+        location: true,
+        deadline: true,
+        site: true,
+        created_at: true,
+        company: {
+          select: {
+            name: true,
+          },
+        },
+        qualifications: {
+          select: {
+            value: true,
+          },
+        },
+        responsibilities: {
+          select: {
+            value: true,
+          },
+        },
+        requiredSkills: {
+          select: {
+            value: true,
+          },
+        },
       },
     });
 
@@ -55,6 +80,9 @@ export async function GET() {
         qualifications: job.qualifications.map((q) => q.value),
         responsibilities: job.responsibilities.map((r) => r.value),
         requiredSkills: job.requiredSkills.map((s) => s.value),
+        postedDate: job.created_at
+          ? job.created_at.toISOString()
+          : job.deadline.toISOString(),
       }))
     );
   } catch (error) {

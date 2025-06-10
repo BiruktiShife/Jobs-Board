@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BsArrowLeft, BsPlus } from "react-icons/bs";
+import { BsArrowLeft } from "react-icons/bs";
 import {
   Select,
   SelectContent,
@@ -17,23 +18,16 @@ import {
 } from "@/components/ui/select";
 import Link from "next/link";
 import {
-  BadgeCheck,
-  Briefcase,
-  Building2,
-  CalendarDays,
-  Globe,
-  Info,
-  ListTodo,
   Loader2,
-  MapPin,
-  Wrench,
   ChevronRight,
   ChevronLeft,
   CheckCircle,
+  AlertCircle,
 } from "lucide-react";
-import { FaBuilding } from "react-icons/fa";
+import { toast } from "sonner";
 
 interface Job {
+  id: string; // Made id required
   title: string;
   companyId: string;
   logo: string;
@@ -48,26 +42,46 @@ interface Job {
 }
 
 interface JobFormProps {
-  onSubmit: (job: Job) => void;
+  onSubmit: (job: Job, isEdit: boolean) => void;
   companies: { id: string; name: string; logo: string }[];
+  initialJob?: Job;
+  jobId?: string; // Added to pass jobId explicitly
 }
 
-function JobForm({ onSubmit, companies }: JobFormProps) {
-  const [job, setJob] = useState<Job>({
-    title: "",
-    companyId: companies[0]?.id || "",
-    logo: companies[0]?.logo || "",
-    area: "",
-    location: "",
-    deadline: "",
-    site: "Full_time",
-    qualifications: [""],
-    responsibilities: [""],
-    about_job: "",
-    requiredSkills: [""],
-  });
+function JobForm({ onSubmit, companies, initialJob, jobId }: JobFormProps) {
+  const router = useRouter();
+  const [job, setJob] = useState<Job>(
+    initialJob || {
+      id: jobId || "",
+      title: "",
+      companyId: companies[0]?.id || "",
+      logo: companies[0]?.logo || "",
+      area: "",
+      location: "",
+      deadline: "",
+      site: "Full_time",
+      qualifications: [""],
+      responsibilities: [""],
+      about_job: "",
+      requiredSkills: [""],
+    }
+  );
   const [step, setStep] = useState(1);
-  const [, setPreview] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
+  const isReviewMode = searchParams.get("mode") === "review";
+  const [isActionLoading, setIsActionLoading] = useState(false);
+
+  useEffect(() => {
+    if (id && !initialJob) {
+      fetch(`/api/jobs/${id}`)
+        .then((res) => res.json())
+        .then((data) => setJob({ ...data, id })) // Ensure id is set
+        .catch((err) => console.error(err));
+    }
+  }, [id, initialJob]);
 
   const handleCompanyChange = (companyId: string) => {
     const selectedCompany = companies.find((c) => c.id === companyId);
@@ -107,26 +121,10 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (typeof onSubmit === "function") {
-      onSubmit(job);
-    } else {
-      console.error("onSubmit is not a function");
-    }
-
-    setJob({
-      title: "",
-      companyId: "",
-      logo: "",
-      area: "",
-      location: "",
-      deadline: "",
-      site: "Full_time",
-      qualifications: [""],
-      responsibilities: [""],
-      about_job: "",
-      requiredSkills: [""],
-    });
-    setPreview(null);
+    setError(null);
+    setIsSubmitting(true);
+    // Ensure id is included in job data
+    onSubmit({ ...job, id: job.id || id || "" }, !!id || !!initialJob);
   };
 
   const industryOptions = [
@@ -134,11 +132,105 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
     "Business",
     "Healthcare",
     "Education",
-    "Fashion Design",
+    "Design",
     "Finance",
-    "Sales",
     "Engineering",
+    "Sales",
+    "Marketing",
+    "Data Science",
+    "Human Resources",
+    "Product Management",
+    "Operations",
+    "Logistics",
+    "Research",
+    "Customer Support",
   ];
+
+  const handleApproveJob = async () => {
+    if (!id) {
+      toast.error("Job ID not found");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const response = await fetch(`/api/jobs/${id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: "APPROVED" }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to approve job");
+      }
+
+      toast.success("Job approved successfully", {
+        description:
+          "The job has been approved and will be visible to job seekers.",
+      });
+
+      // Wait a moment for the toast to be visible before redirecting
+      setTimeout(() => {
+        router.replace("/admin?tab=pending-jobs");
+      }, 1500);
+    } catch (error) {
+      console.error("Error approving job:", error);
+      toast.error("Failed to approve job", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "An error occurred while approving the job",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRejectJob = async () => {
+    if (!id) {
+      toast.error("Job ID not found");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const response = await fetch(`/api/jobs/${id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: "REJECTED" }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to reject job");
+      }
+
+      toast.success("Job rejected", {
+        description:
+          "The job has been rejected and will not be visible to job seekers.",
+      });
+
+      // Wait a moment for the toast to be visible before redirecting
+      setTimeout(() => {
+        router.replace("/admin?tab=pending-jobs");
+      }, 1500);
+    } catch (error) {
+      console.error("Error rejecting job:", error);
+      toast.error("Failed to reject job", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "An error occurred while rejecting the job",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-4 sm:py-8">
@@ -156,13 +248,49 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
               </Link>
             </Button>
             <CardTitle className="text-xl sm:text-2xl font-bold text-green-800 flex items-center">
-              <Briefcase className="h-5 w-5 sm:h-6 sm:w-6 mr-3 text-green-600" />
-              Create Job Posting
+              {initialJob || id ? "Edit Job Posting" : "Create Job Posting"}
             </CardTitle>
           </div>
         </CardHeader>
 
         <CardContent className="p-4 sm:p-8">
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-lg flex items-center">
+              <AlertCircle className="w-5 h-5 mr-2" />
+              {error}
+            </div>
+          )}
+          <div className="flex justify-between items-center mb-6">
+            <Link href="/admin">
+              <Button variant="outline" className="flex items-center gap-2">
+                <BsArrowLeft /> Back to Dashboard
+              </Button>
+            </Link>
+            {isReviewMode && (
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleApproveJob}
+                  className="bg-green-600 text-white hover:bg-green-700"
+                  disabled={isActionLoading}
+                >
+                  {isActionLoading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : null}
+                  Approve Job
+                </Button>
+                <Button
+                  onClick={handleRejectJob}
+                  variant="destructive"
+                  disabled={isActionLoading}
+                >
+                  {isActionLoading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : null}
+                  Reject Job
+                </Button>
+              </div>
+            )}
+          </div>
           <form onSubmit={handleSubmit}>
             <div className="flex justify-center mb-6 sm:mb-8">
               <div className="flex items-center">
@@ -204,70 +332,58 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
 
             {step === 1 && (
               <div className="space-y-4 sm:space-y-6">
-                <div>
-                  <Label
-                    htmlFor="title"
-                    className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700 text-sm sm:text-base"
-                  >
-                    <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-                    Job Title
-                  </Label>
-                  <Input
-                    id="title"
-                    name="title"
-                    value={job.title}
-                    onChange={handleInput}
-                    className="focus-visible:ring-green-500"
-                    placeholder="e.g. Senior Frontend Developer"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label
-                    htmlFor="companyId"
-                    className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700 text-sm sm:text-base"
-                  >
-                    <FaBuilding className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-                    Company
-                  </Label>
-                  <Select
-                    onValueChange={handleCompanyChange}
-                    value={job.companyId}
-                    required
-                  >
-                    <SelectTrigger className="focus:ring-green-500">
-                      <SelectValue placeholder="Select a company" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {companies.map((company) => (
-                          <SelectItem
-                            key={company.id}
-                            value={company.id}
-                            className="hover:bg-green-50"
-                          >
-                            {company.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                  <div>
-                    <Label
-                      htmlFor="area"
-                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700 text-sm sm:text-base"
-                    >
-                      <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-                      Industry Area
-                    </Label>
-                    <Select
-                      onValueChange={(value) => setJob({ ...job, area: value })}
-                      value={job.area}
+                <div className="grid gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Job Title</Label>
+                    <Input
+                      id="title"
+                      name="title"
+                      value={job.title}
+                      onChange={(e) => handleInput(e)}
                       required
+                      readOnly={isReviewMode}
+                      className={isReviewMode ? "bg-gray-100" : ""}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="companyId">Company</Label>
+                    <Select
+                      onValueChange={handleCompanyChange}
+                      value={job.companyId}
+                      required
+                      disabled={isReviewMode}
+                    >
+                      <SelectTrigger className="focus:ring-green-500">
+                        <SelectValue placeholder="Select a company" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {companies.map((company) => (
+                            <SelectItem
+                              key={company.id}
+                              value={company.id}
+                              className="hover:bg-green-50"
+                            >
+                              {company.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="area">Industry</Label>
+                    <Select
+                      name="area"
+                      value={job.area}
+                      onValueChange={(value) =>
+                        handleInput({
+                          target: { name: "area", value },
+                        } as React.ChangeEvent<HTMLSelectElement>)
+                      }
+                      disabled={isReviewMode}
                     >
                       <SelectTrigger className="focus:ring-green-500">
                         <SelectValue placeholder="Select an industry" />
@@ -288,58 +404,46 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                     </Select>
                   </div>
 
-                  <div>
-                    <Label
-                      htmlFor="location"
-                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700 text-sm sm:text-base"
-                    >
-                      <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-                      Location
-                    </Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
                     <Input
                       id="location"
                       name="location"
                       value={job.location}
-                      onChange={handleInput}
-                      placeholder="e.g. New York, NY"
+                      onChange={(e) => handleInput(e)}
                       required
+                      readOnly={isReviewMode}
+                      className={isReviewMode ? "bg-gray-100" : ""}
                     />
                   </div>
 
-                  <div>
-                    <Label
-                      htmlFor="deadline"
-                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700 text-sm sm:text-base"
-                    >
-                      <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-                      Deadline
-                    </Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="deadline">Application Deadline</Label>
                     <Input
-                      id="deadline"
                       type="date"
+                      id="deadline"
                       name="deadline"
                       value={job.deadline}
-                      onChange={handleInput}
+                      onChange={(e) => handleInput(e)}
                       required
+                      readOnly={isReviewMode}
+                      className={isReviewMode ? "bg-gray-100" : ""}
                     />
                   </div>
 
-                  <div>
-                    <Label
-                      htmlFor="site"
-                      className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700 text-sm sm:text-base"
-                    >
-                      <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-                      Employment Type
-                    </Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="site">Employment Type</Label>
                     <Select
+                      name="site"
+                      value={job.site}
                       onValueChange={(value) =>
-                        setJob({ ...job, site: value as Job["site"] })
+                        handleInput({
+                          target: { name: "site", value },
+                        } as React.ChangeEvent<HTMLSelectElement>)
                       }
-                      defaultValue={job.site}
-                      required
+                      disabled={isReviewMode}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="focus:ring-green-500">
                         <SelectValue placeholder="Select Employment Type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -366,26 +470,19 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
 
-                <div>
-                  <Label
-                    htmlFor="about_job"
-                    className="ml-2 mb-2 flex items-center gap-2 font-semibold text-gray-700 text-sm sm:text-base"
-                  >
-                    <Info className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-                    About the Job
-                  </Label>
-                  <Textarea
-                    id="about_job"
-                    name="about_job"
-                    value={job.about_job}
-                    onChange={handleTextArea}
-                    rows={4}
-                    className="focus-visible:ring-green-500 h-32 sm:h-40"
-                    placeholder="Describe the job responsibilities, company culture, and other relevant details..."
-                    required
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="about_job">Job Description</Label>
+                    <Textarea
+                      id="about_job"
+                      name="about_job"
+                      value={job.about_job}
+                      onChange={(e) => handleTextArea(e)}
+                      required
+                      readOnly={isReviewMode}
+                      className={isReviewMode ? "bg-gray-100" : ""}
+                    />
+                  </div>
                 </div>
 
                 <div className="flex justify-end">
@@ -393,6 +490,7 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                     type="button"
                     onClick={() => setStep(2)}
                     className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 flex items-center"
+                    disabled={isSubmitting}
                   >
                     Next <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
@@ -411,13 +509,13 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                 ).map((field) => {
                   const icons = {
                     qualifications: (
-                      <BadgeCheck className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                     ),
                     responsibilities: (
-                      <ListTodo className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                     ),
                     requiredSkills: (
-                      <Wrench className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                     ),
                   };
 
@@ -456,6 +554,7 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                                   field
                                 ].toLowerCase()}`}
                                 required
+                                readOnly={isReviewMode}
                               />
                               {index > 0 && (
                                 <Button
@@ -464,6 +563,7 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                                   className="text-red-500 hover:text-red-600 hover:bg-red-50 h-8 w-8 sm:h-10 sm:w-10"
                                   onClick={() => removeField(field, index)}
                                   type="button"
+                                  disabled={isReviewMode}
                                 >
                                   ×
                                 </Button>
@@ -476,8 +576,8 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                           type="button"
                           className="mt-4 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 border-green-200 w-full sm:w-auto flex items-center text-sm sm:text-base"
                           onClick={() => addField(field)}
+                          disabled={isSubmitting}
                         >
-                          <BsPlus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                           Add {titles[field].toLowerCase()}
                         </Button>
                       </CardContent>
@@ -491,17 +591,20 @@ function JobForm({ onSubmit, companies }: JobFormProps) {
                     variant="outline"
                     className="flex items-center gap-2 text-gray-700 hover:bg-gray-100"
                     onClick={() => setStep(1)}
+                    disabled={isSubmitting}
                   >
                     <ChevronLeft className="h-4 w-4" />
                     Back
                   </Button>
-                  <Button
-                    type="submit"
-                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 flex items-center gap-2"
-                  >
-                    <Briefcase className="h-4 w-4" />
-                    Post Job
-                  </Button>
+                  {!isReviewMode && (
+                    <Button
+                      type="submit"
+                      className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 flex items-center gap-2"
+                      disabled={isSubmitting}
+                    >
+                      {initialJob || id ? "Update Job" : "Post Job"}
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
@@ -516,42 +619,88 @@ export default function PostJob() {
   const [companies, setCompanies] = useState<
     { id: string; name: string; logo: string }[]
   >([]);
+  const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const jobId = searchParams.get("id");
+  const isReviewMode = searchParams.get("mode") === "review";
 
   useEffect(() => {
-    const fetchCompanies = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch("/api/companies");
-        if (response.ok) {
-          const data = await response.json();
-          setCompanies(data);
+        // Fetch companies
+        const companiesRes = await fetch("/api/companies");
+        if (!companiesRes.ok) {
+          throw new Error("Failed to fetch companies");
         }
-      } catch (error) {
-        console.error("Error fetching companies:", error);
+        const companiesData = await companiesRes.json();
+        setCompanies(companiesData);
+
+        // Fetch job if editing
+        if (jobId) {
+          const jobRes = await fetch(`/api/jobs/${jobId}`);
+          if (!jobRes.ok) {
+            throw new Error("Failed to fetch job");
+          }
+          const jobData = await jobRes.json();
+          // Format deadline to YYYY-MM-DD
+          const formattedJob = {
+            ...jobData,
+            id: jobId, // Ensure id is included
+            deadline: new Date(jobData.deadline).toISOString().split("T")[0],
+            qualifications: jobData.qualifications.length
+              ? jobData.qualifications
+              : [""],
+            responsibilities: jobData.responsibilities.length
+              ? jobData.responsibilities
+              : [""],
+            requiredSkills: jobData.requiredSkills.length
+              ? jobData.requiredSkills
+              : [""],
+          };
+          setJob(formattedJob);
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Error loading data. Please try again.");
       } finally {
         setLoading(false);
       }
     };
-    fetchCompanies();
-  }, []);
+    fetchData();
+  }, [jobId]);
 
-  const handleJobSubmit = async (job: Job) => {
+  const handleJobSubmit = async (jobData: Job, isEdit: boolean) => {
     try {
-      const response = await fetch("/api/jobs", {
-        method: "POST",
+      const url =
+        isEdit && jobData.id ? `/api/jobs/${jobData.id}` : "/api/jobs";
+      const method = isEdit && jobData.id ? "PUT" : "POST";
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(job),
+        body: JSON.stringify(jobData),
       });
 
       if (response.ok) {
-        alert("Job posted successfully!");
+        alert(
+          isEdit ? "Job updated successfully!" : "Job posted successfully!"
+        );
+        router.push("/admin");
       } else {
         const errorData = await response.json();
-        alert(`Failed to post job: ${errorData.error || "Unknown error"}`);
+        alert(
+          `Failed to ${isEdit ? "update" : "post"} job: ${
+            errorData.error || "Unknown error"
+          }`
+        );
       }
     } catch (error) {
       console.error("Error submitting job:", error);
-      alert("An error occurred while posting the job");
+      alert(
+        `An error occurred while ${isEdit ? "updating" : "posting"} the job`
+      );
     }
   };
 
@@ -563,13 +712,29 @@ export default function PostJob() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="p-4 bg-red-50 text-red-600 rounded-lg flex items-center">
+          <AlertCircle className="w-5 h-5 mr-2" />
+          {error}
+        </div>
+      </div>
+    );
+  }
+
   if (companies.length === 0) {
     return <div>No companies available. Please create a company first.</div>;
   }
 
   return (
     <div>
-      <JobForm onSubmit={handleJobSubmit} companies={companies} />
+      <JobForm
+        onSubmit={handleJobSubmit}
+        companies={companies}
+        initialJob={job || undefined}
+        jobId={jobId || undefined} // Pass jobId explicitly
+      />
     </div>
   );
 }

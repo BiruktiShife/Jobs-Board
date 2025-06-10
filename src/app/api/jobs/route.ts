@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/app/lib/prisma";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+
   try {
     const jobs = await prisma.job.findMany({
+      where: {
+        // Only return approved jobs unless the user is an admin
+        status: session?.user.role === "ADMIN" ? undefined : "APPROVED",
+      },
       include: {
         qualifications: true,
         responsibilities: true,
@@ -27,10 +35,11 @@ export async function GET() {
             ? "Full-time"
             : job.site === "Part_time"
             ? "Part-time"
-            : job.site, // Consistent formatting for all enum values
+            : job.site,
         qualifications: job.qualifications.map((q) => q.value),
         responsibilities: job.responsibilities.map((r) => r.value),
         requiredSkills: job.requiredSkills.map((s) => s.value),
+        status: job.status,
       }))
     );
   } catch (error) {
@@ -67,6 +76,7 @@ export async function POST(request: Request) {
         deadline: new Date(jobData.deadline),
         site: jobData.site,
         about_job: jobData.about_job,
+        status: "PENDING",
         qualifications: {
           create: jobData.qualifications.map((value: string) => ({ value })),
         },

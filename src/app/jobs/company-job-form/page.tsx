@@ -166,10 +166,18 @@ function CompanyJobForm({ onSubmit }: CompanyJobFormProps) {
     "Business",
     "Healthcare",
     "Education",
-    "Fashion Design",
+    "Design",
     "Finance",
-    "Sales",
     "Engineering",
+    "Sales",
+    "Marketing",
+    "Data Science",
+    "Human Resources",
+    "Product Management",
+    "Operations",
+    "Logistics",
+    "Research",
+    "Customer Support",
   ];
 
   return (

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,11 +26,20 @@ import { Label } from "@/components/ui/label";
 import { Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+interface Company {
+  id: string;
+  name: string;
+  logo: string | null;
+  about: string | null;
+  adminEmail: string | null;
+}
+
 export default function CreateCompanyPage() {
   const { data: session, status } = useSession();
+  const [, setCompany] = useState<Company | null>(null);
   const [name, setName] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [, setLogo] = useState<string>("");
+  const [logo, setLogo] = useState<string>("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [about, setAbout] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,13 +48,42 @@ export default function CreateCompanyPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const companyId = searchParams.get("id");
 
   useEffect(() => {
     if (status === "loading") return;
     if (!session || session.user.role !== "ADMIN") {
       router.push("/login");
+      return;
     }
-  }, [session, status, router]);
+
+    // Fetch company data if editing
+    if (companyId) {
+      fetch(`/api/companies/${companyId}`)
+        .then(async (res) => {
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error || "Failed to fetch company");
+          }
+          return res.json();
+        })
+        .then((data: Company) => {
+          setCompany(data);
+          setName(data.name);
+          if (data.logo) {
+            setLogo(data.logo);
+            setLogoPreview(data.logo);
+          }
+          if (data.about) setAbout(data.about);
+          if (data.adminEmail) setEmail(data.adminEmail);
+        })
+        .catch((err) => {
+          console.error("Fetch company error:", err);
+          setError(err.message || "Failed to load company data");
+        });
+    }
+  }, [session, status, router, companyId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -72,31 +110,45 @@ export default function CreateCompanyPage() {
     if (logoFile) formData.append("logo", logoFile);
     formData.append("about", about);
     formData.append("email", email);
-    formData.append("password", password);
+    if (password) formData.append("password", password); // Optional for updates
 
     try {
-      const response = await fetch("/api/companies", {
-        method: "POST",
+      const isEdit = !!companyId;
+      const url = isEdit ? `/api/companies/${companyId}` : "/api/companies";
+      const method = isEdit ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         body: formData,
       });
 
       if (response.ok) {
         const data = await response.json();
         setSuccess(data.message);
-        setName("");
-        setLogoFile(null);
-        setLogo("");
-        setLogoPreview(null);
-        setAbout("");
-        setEmail("");
-        setPassword("");
+        if (!isEdit) {
+          // Reset form for creation
+          setName("");
+          setLogoFile(null);
+          setLogo("");
+          setLogoPreview(null);
+          setAbout("");
+          setEmail("");
+          setPassword("");
+        }
+        setTimeout(() => router.push("/admin"), 1000); // Redirect to admin
       } else {
         const errorData = await response.json();
-        setError(errorData.error || "Failed to create company");
+        setError(
+          errorData.error || `Failed to ${isEdit ? "update" : "create"} company`
+        );
       }
     } catch (error) {
-      console.error("Create company error:", error);
-      setError("An unexpected error occurred");
+      console.error(`${companyId ? "Update" : "Create"} company error:`, error);
+      setError(
+        `An unexpected error occurred while ${
+          companyId ? "updating" : "creating"
+        } the company`
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -135,10 +187,12 @@ export default function CreateCompanyPage() {
               <div className="flex flex-col items-center text-center">
                 <CardTitle className="text-xl sm:text-2xl font-semibold flex items-center justify-center gap-1 sm:gap-2">
                   <Building2 className="w-5 h-5 sm:w-6 sm:h-6" />
-                  Create New Company
+                  {companyId ? "Edit Company" : "Create New Company"}
                 </CardTitle>
                 <p className="text-blue-100 text-xs sm:text-sm mt-1 sm:mt-2 font-light">
-                  Set up a new company profile
+                  {companyId
+                    ? "Update company profile"
+                    : "Set up a new company profile"}
                 </p>
               </div>
               <div className="sm:w-6" />
@@ -195,7 +249,11 @@ export default function CreateCompanyPage() {
                       <div className="flex flex-col items-center justify-center">
                         <Upload className="w-6 h-6 text-gray-400 mb-2" />
                         <p className="text-sm text-gray-600 font-medium">
-                          {logoFile ? logoFile.name : "Click to upload logo"}
+                          {logoFile
+                            ? logoFile.name
+                            : companyId && logo
+                            ? "Change logo"
+                            : "Click to upload logo"}
                         </p>
                       </div>
                       <Input
@@ -262,10 +320,14 @@ export default function CreateCompanyPage() {
                       </Label>
                       <Input
                         type="password"
-                        placeholder="••••••••"
+                        placeholder={
+                          companyId
+                            ? "Leave blank to keep current password"
+                            : "••••••••"
+                        }
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        required
+                        required={!companyId} // Optional for updates
                         className="border-gray-300 focus:ring-green-500 focus:border-green-500 rounded-lg transition-all duration-200"
                       />
                     </div>
@@ -285,12 +347,18 @@ export default function CreateCompanyPage() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Creating Company...</span>
+                    <span>
+                      {companyId
+                        ? "Updating Company..."
+                        : "Creating Company..."}
+                    </span>
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="w-5 h-5" />
-                    <span>Create Company</span>
+                    <span>
+                      {companyId ? "Update Company" : "Create Company"}
+                    </span>
                   </>
                 )}
               </Button>

@@ -8,115 +8,109 @@ datasource db {
 }
 
 model Job {
-  id              String   @id @default(cuid())
+  id               String           @id @default(cuid())
   title            String
-  companyId        String
-  company          Company          @relation(fields: [companyId], references: [id])
   logo             String
   area             String
   location         String
   deadline         DateTime
   site             EmploymentType
   about_job        String
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @default(now()) @updatedAt
+  companyId        String
+  applications     Application[]
+  bookmarks        Bookmark[]
+  company          Company          @relation(fields: [companyId], references: [id])
   qualifications   Qualification[]
   responsibilities Responsibility[]
   requiredSkills   Skill[]
- applications Application[] 
-  bookmarks Bookmark[]
-  created_at       DateTime         @default(now())
-  updated_at       DateTime         @default(now()) @updatedAt
 }
 
 model Qualification {
   id    Int    @id @default(autoincrement())
   value String
-  job   Job    @relation(fields: [jobId], references: [id])
   jobId String
+  job   Job    @relation(fields: [jobId], references: [id])
 }
 
 model Responsibility {
   id    Int    @id @default(autoincrement())
   value String
-  job   Job    @relation(fields: [jobId], references: [id])
   jobId String
+  job   Job    @relation(fields: [jobId], references: [id])
 }
 
 model Skill {
   id    Int    @id @default(autoincrement())
   value String
-  job   Job    @relation(fields: [jobId], references: [id])
   jobId String
-}
-
-enum EmploymentType {
-  Full_time
-  Part_time
-  Freelance
+  job   Job    @relation(fields: [jobId], references: [id])
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String        @id @default(cuid())
   name          String?
-  email         String    @unique
-  password      String?   
-  emailVerified DateTime? 
-  image         String?
-  phone         String?   
-  studyArea     String[]  
-  role          Role      @default(JOB_SEEKER)
+  email         String        @unique
+  password      String?
+  role          Role          @default(JOB_SEEKER)
   companyId     String?
-  company       Company?  @relation(name: "CompanyUsers", fields: [companyId], references: [id])
-  adminCompany  Company?  @relation(name: "CompanyAdmin")
-  createdAt     DateTime  @default(now())
-  accounts      Account[] 
-  sessions      Session[] 
-  bookmarks     Bookmark[]
+  createdAt     DateTime      @default(now())
+  emailVerified DateTime?
+  image         String?
+  phone         String?
+  studyArea     String[]
+  accounts      Account[]
   applications  Application[]
+  bookmarks     Bookmark[]
+  adminCompany  Company?      @relation("CompanyAdmin")
+  sessions      Session[]
+  company       Company?      @relation("CompanyUsers", fields: [companyId], references: [id])
 }
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([provider, providerAccountId])
 }
+
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Company {
   id        String   @id @default(cuid())
-  name        String   @unique
-  logo        String?  
-  about       String?
-  adminId   String?   @unique
-  admin     User?     @relation(name: "CompanyAdmin", fields: [adminId], references: [id])
-  users     User[]   @relation(name: "CompanyUsers")
-  userId    String?  @unique
-  jobs      Job[]
+  name      String   @unique
+  adminId   String?  @unique
   createdAt DateTime @default(now())
+  about     String?
+  logo      String?
+  userId    String?  @unique
+  admin     User?    @relation("CompanyAdmin", fields: [adminId], references: [id])
+  jobs      Job[]
+  users     User[]   @relation("CompanyUsers")
 }
 
 model Application {
   id             String   @id @default(cuid())
   jobId          String
-  job            Job      @relation(fields: [jobId], references: [id])
   userId         String
-  user           User     @relation(fields: [userId], references: [id])
-  @@unique([userId, jobId])
   fullName       String
   yearOfBirth    Int
   email          String
@@ -126,31 +120,43 @@ model Application {
   profession     String
   careerLevel    String
   coverLetter    String
-  experiences    Json 
+  experiences    Json
   degreeType     String
   institution    String
   graduationDate DateTime
-  skills         String[] 
-  certifications String[] 
-  languages      String[] 
+  skills         String[]
+  certifications String[]
+  languages      String[]
   projects       String?
   volunteerWork  String?
-  resumeUrl      String? 
+  resumeUrl      String?
   createdAt      DateTime @default(now())
   status         String?  @default("Pending")
+  job            Job      @relation(fields: [jobId], references: [id])
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, jobId])
 }
+
 model Bookmark {
   id        String   @id @default(uuid())
   userId    String
-  jobId     String      
+  jobId     String
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
   job       Job      @relation(fields: [jobId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
   @@unique([userId, jobId])
+}
+
+enum EmploymentType {
+  Full_time
+  Part_time
+  Freelance
 }
 
 enum Role {
   ADMIN
   JOB_SEEKER
-  COMPANY_ADMIN   
+  COMPANY_ADMIN
 }

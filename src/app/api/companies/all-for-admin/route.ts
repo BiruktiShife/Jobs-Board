@@ -13,6 +13,7 @@ export async function GET() {
   try {
     const companies = await prisma.company.findMany({
       select: {
+        id: true,
         name: true,
         admin: {
           select: { email: true },
@@ -23,6 +24,7 @@ export async function GET() {
     console.log("Raw companies data from Prisma:", companies);
 
     const formattedCompanies = companies.map((company) => ({
+      id: company.id,
       name: company.name,
       adminEmail: company.admin?.email || "N/A",
     }));
