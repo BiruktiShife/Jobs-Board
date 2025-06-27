@@ -1,6 +1,6 @@
 // src/app/api/signup/route.ts
 import { NextResponse } from "next/server";
-import { prisma } from "@/app/lib/prisma";
+import { prisma } from "@/lib/prisma-server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/app/lib/prisma";
+import { prisma } from "@/lib/prisma-server";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -28,8 +28,8 @@ export async function GET(request: Request) {
         job.site === "Full_time"
           ? "Full-time"
           : job.site === "Part_time"
-          ? "Part-time"
-          : job.site,
+            ? "Part-time"
+            : job.site,
       qualifications: job.qualifications.map((q) => q.value),
       responsibilities: job.responsibilities.map((r) => r.value),
       requiredSkills: job.requiredSkills.map((s) => s.value),

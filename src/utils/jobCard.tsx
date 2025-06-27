@@ -112,80 +112,108 @@ export default function JobCard({ jobData, className }: JobCardProps) {
   if (!job) return null;
 
   return (
-    <Card className={`p-3 sm:p-4 text-xs sm:text-base ${className}`}>
-      <CardHeader className="p-1 sm:p-2">
-        <CardTitle className="flex items-center gap-3 sm:gap-4">
-          <div className="w-12 sm:w-16 h-12 sm:h-16 overflow-hidden rounded-full">
-            <Image
-              src={job.logo || "/logo.png"}
-              alt={`${job.company_name} Logo`}
-              width={64}
-              height={64}
-              className="object-cover"
-            />
+    <Card
+      className={`group hover:shadow-xl transition-all duration-300 border-0 shadow-lg overflow-hidden ${className}`}
+    >
+      <CardContent className="p-6">
+        {/* Header with Company Info and Bookmark */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            <div className="w-14 h-14 overflow-hidden rounded-xl bg-gray-100 flex-shrink-0">
+              <Image
+                src={job.logo || "/logo.png"}
+                alt={`${job.company_name} Logo`}
+                width={56}
+                height={56}
+                className="object-cover w-full h-full"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-lg text-gray-900 truncate">
+                {job.title}
+              </h3>
+              <p className="text-gray-600 font-medium">{job.company_name}</p>
+              <div className="flex items-center space-x-2 mt-1">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {job.area}
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="flex-1">
-            <span className="text-lg sm:text-2xl font-bold text-gray-900">
-              {job.company_name}
-            </span>
-            <div className="text-xs sm:text-sm text-gray-500">{job.area}</div>
-          </div>
-          <button onClick={handleBookmarkToggle} className="focus:outline-none">
+          <button
+            onClick={handleBookmarkToggle}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             <FiBookmark
-              className={`w-5 sm:w-6 h-5 sm:h-6 ${
+              className={`w-5 h-5 ${
                 isBookmarked
                   ? "text-yellow-500 fill-yellow-500"
-                  : "text-gray-500"
+                  : "text-gray-400 hover:text-gray-600"
               }`}
             />
           </button>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-1 sm:p-2">
-        <div className="flex flex-col space-y-1 sm:space-y-2 mb-3 sm:mb-4">
-          <h1 className="font-bold text-lg sm:text-2xl">{job.title}</h1>
-          <div className="flex items-center space-x-1 sm:space-x-2">
-            <FaMapMarkerAlt className="text-purple-600 w-4 sm:w-5 h-4 sm:h-5" />
-            <span className="text-xs sm:text-base">{job.location}</span>
+        </div>
+
+        {/* Job Details */}
+        <div className="space-y-3 mb-4">
+          <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <FaMapMarkerAlt className="text-blue-500 w-4 h-4 flex-shrink-0" />
+            <span className="truncate">{job.location}</span>
           </div>
-          <div className="flex items-center space-x-1 sm:space-x-2">
-            <AiOutlineCalendar className="text-purple-600 w-4 sm:w-5 h-4 sm:h-5" />
-            <span className="text-xs sm:text-base">{job.deadline}</span>
+          <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <AiOutlineCalendar className="text-green-500 w-4 h-4 flex-shrink-0" />
+            <span>Deadline: {job.deadline}</span>
           </div>
-          <div className="flex items-center space-x-1 sm:space-x-2">
-            <MdBusiness className="text-purple-600 w-4 sm:w-5 h-4 sm:h-5" />
-            <span className="text-xs sm:text-base">
-              {job.site === "Full_time" ? "Full-time" : job.site}
-            </span>
+          <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <MdBusiness className="text-purple-500 w-4 h-4 flex-shrink-0" />
+            <span>{job.site === "Full_time" ? "Full-time" : job.site}</span>
           </div>
         </div>
-        <Card className="p-2 sm:p-4">
-          <CardHeader>
-            <CardTitle className="text-base sm:text-lg">
-              About the Job
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-1 sm:p-2">
-            <p className="text-xs sm:text-base text-gray-700">
-              {expanded || job.about_job.length <= 200
-                ? job.about_job
-                : job.about_job.slice(0, 80) + "..."}
-            </p>
-            {job.about_job.length > 200 && (
-              <button
-                className="text-green-700 text-xs sm:text-base mt-1 sm:mt-2 hover:text-green-500"
-                onClick={() => setExpanded(!expanded)}
-              >
-                {expanded ? "read less" : "read more"}
-              </button>
-            )}
-          </CardContent>
-        </Card>
+
+        {/* Job Description */}
+        <div className="mb-6">
+          <p className="text-gray-700 text-sm leading-relaxed">
+            {expanded || job.about_job.length <= 120
+              ? job.about_job
+              : job.about_job.slice(0, 120) + "..."}
+          </p>
+          {job.about_job.length > 120 && (
+            <button
+              className="text-blue-600 text-sm mt-2 hover:text-blue-700 font-medium"
+              onClick={() => setExpanded(!expanded)}
+            >
+              {expanded ? "Show less" : "Read more"}
+            </button>
+          )}
+        </div>
+
+        {/* Skills Preview */}
+        {job.requiredSkills && job.requiredSkills.length > 0 && (
+          <div className="mb-6">
+            <div className="flex flex-wrap gap-2">
+              {job.requiredSkills.slice(0, 3).map((skill, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700"
+                >
+                  {skill}
+                </span>
+              ))}
+              {job.requiredSkills.length > 3 && (
+                <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
+                  +{job.requiredSkills.length - 3} more
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Action Button */}
         <Button
-          className="bg-green-600 text-white hover:bg-green-700 px-3 sm:px-4 py-1 sm:py-2 text-xs sm:text-base mt-3 sm:mt-4 w-full sm:w-auto"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 group-hover:bg-blue-700 transition-colors"
           onClick={() => router.push(`/jobs/${job.id}`)}
         >
-          View Job Detail
+          View Details & Apply
         </Button>
       </CardContent>
     </Card>

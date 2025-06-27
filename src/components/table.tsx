@@ -145,9 +145,19 @@ export function CustomTable({
 
   if (!columns) {
     return (
-      <div className="flex items-center justify-center p-8 bg-red-50 rounded-lg text-red-600">
-        <AlertCircle className="w-5 h-5 mr-2" />
-        Error: Columns not provided
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <h4 className="font-medium text-red-900 mb-1">
+              Configuration Error
+            </h4>
+            <p className="text-sm text-red-700">
+              Table columns not provided. Please check the component
+              configuration.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -193,16 +203,16 @@ export function CustomTable({
   };
 
   return (
-    <div className="rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-gray-200 overflow-hidden bg-white/50 backdrop-blur-sm shadow-lg">
       <Table className="min-w-full">
-        <TableHeader className="bg-gray-50">
-          <TableRow>
+        <TableHeader>
+          <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100/80 border-b border-gray-200">
             {columns.map((column) => (
               <TableHead
                 key={column}
-                className="py-3 px-4 font-semibold text-gray-700"
+                className="py-4 px-4 font-semibold text-gray-700"
               >
-                <div className="flex items-center">
+                <div className="flex items-center gap-2">
                   {columnIcons[column]}
                   {column}
                 </div>
@@ -210,16 +220,22 @@ export function CustomTable({
             ))}
           </TableRow>
         </TableHeader>
-        <TableBody className="divide-y divide-gray-200">
+        <TableBody>
           {data.length === 0 ? (
             <TableRow>
-              <TableCell
-                colSpan={columns.length}
-                className="py-8 text-center text-gray-500"
-              >
-                <div className="flex flex-col items-center justify-center">
-                  <FileText className="w-10 h-10 text-gray-400 mb-2" />
-                  No data available
+              <TableCell colSpan={columns.length} className="text-center py-16">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                    <FileText className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      No data available
+                    </h3>
+                    <p className="text-gray-500">
+                      There are no items to display at the moment.
+                    </p>
+                  </div>
                 </div>
               </TableCell>
             </TableRow>
@@ -227,15 +243,17 @@ export function CustomTable({
             data.map((row, index) => (
               <TableRow
                 key={index}
-                className="hover:bg-gray-50 transition-colors"
+                className={`hover:bg-blue-50/50 transition-colors border-b border-gray-100 ${
+                  index % 2 === 0 ? "bg-white" : "bg-gray-50/30"
+                }`}
               >
                 {columns.map((column) => (
                   <TableCell
                     key={column}
                     className={cn(
-                      "py-3 px-4 whitespace-nowrap",
+                      "py-4 px-4",
                       column === "Applications" &&
-                        "cursor-pointer text-green-600 hover:text-green-800"
+                        "cursor-pointer text-blue-600 hover:text-blue-800 font-medium"
                     )}
                     onClick={() =>
                       column === "Applications" && onCellClick?.(row, column)

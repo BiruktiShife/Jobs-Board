@@ -1,5 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,62 +21,57 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { useEffect, useState } from "react";
 import {
-  FaUser,
-  FaBriefcase,
-  FaGraduationCap,
-  FaBookOpen,
-  FaCode,
-  FaAward,
-  FaLanguage,
-  FaHandHoldingHeart,
-  FaFileAlt,
-  FaCalendar,
-} from "react-icons/fa";
-import { CalendarIcon, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
-import { FiPlus } from "react-icons/fi";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { applicationSchema } from "@/app/api/applications/route";
-import Link from "next/link";
-import { BsArrowLeft } from "react-icons/bs";
-import { motion } from "framer-motion";
+  CalendarIcon,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  ArrowLeft,
+  Plus,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Loading } from "@/components/ui/loading";
 
 export default function ApplicationForm() {
-  const [graduationDate, setGraduationDate] = useState<Date | undefined>(
-    new Date()
-  );
-  const [skills, setSkills] = useState<string[]>([]);
-  const [certifications, setCertifications] = useState<string[]>([]);
-  const [languages, setLanguages] = useState<string[]>([]);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { data: session, status } = useSession();
+
+  const jobId = searchParams.get("jobId");
+  const jobTitle = searchParams.get("title");
+
+  // Form state
+  const [formData, setFormData] = useState({
+    fullName: "",
+    yearOfBirth: new Date().getFullYear() - 25,
+    address: "",
+    phone: "",
+    portfolio: "",
+    profession: "",
+    careerLevel: "",
+    coverLetter: "",
+    degreeType: "",
+    institution: "",
+    graduationDate: new Date(),
+    projects: "",
+    volunteerWork: "",
+  });
+
   const [experiences, setExperiences] = useState([
     { jobTitle: "", company_name: "", location: "", responsibilities: "" },
   ]);
-  const [fullName, setFullName] = useState("");
-  const [yearOfBirth, setYearOfBirth] = useState<number | undefined>();
-  const [address, setAddress] = useState("");
-  const [phone, setPhone] = useState("");
-  const [portfolio, setPortfolio] = useState("");
-  const [profession, setProfession] = useState("");
-  const [careerLevel, setCareerLevel] = useState("");
-  const [coverLetter, setCoverLetter] = useState("");
-  const [degreeType, setDegreeType] = useState("");
-  const [institution, setInstitution] = useState("");
-  const [projects, setProjects] = useState("");
-  const [volunteerWork, setVolunteerWork] = useState("");
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [hasApplied, setHasApplied] = useState<boolean>(false);
-  const [isCheckingApplication, setIsCheckingApplication] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
 
-  const searchParams = useSearchParams();
-  const jobId = searchParams.get("jobId");
-  const title = searchParams.get("title");
-  const router = useRouter();
-  const { data: session, status } = useSession();
+  const [skills, setSkills] = useState([""]);
+  const [certifications, setCertifications] = useState([""]);
+  const [languages, setLanguages] = useState([""]);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+
+  // UI state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
+  const [isCheckingApplication, setIsCheckingApplication] = useState(true);
 
   const degreeTypes = [
     "High School Diploma",
@@ -83,17 +81,19 @@ export default function ApplicationForm() {
     "PhD",
     "Other",
   ];
+
   const careerLevels = [
-    "Senior Executive(C Level)",
-    "Executive(VP, Director)",
-    "Senior(5-8 years)",
-    "Mid Level(3-5 years)",
-    "Junior Level(1-3 years)",
+    "Junior Level (1-3 years)",
+    "Mid Level (3-5 years)",
+    "Senior (5-8 years)",
+    "Executive (VP, Director)",
+    "Senior Executive (C Level)",
   ];
 
+  // Check if user has already applied
   useEffect(() => {
-    const checkApplicationStatus = async () => {
-      if (!session?.user.id || !jobId) {
+    const checkApplication = async () => {
+      if (!session?.user?.id || !jobId) {
         setIsCheckingApplication(false);
         return;
       }
@@ -103,107 +103,129 @@ export default function ApplicationForm() {
           `/api/check-application?userId=${session.user.id}&jobId=${jobId}`
         );
         const data = await response.json();
-        if (response.ok) {
-          setHasApplied(data.hasApplied);
-        } else {
-          console.error("Failed to check application status:", data.error);
-        }
-      } catch (err) {
-        console.error("Error checking application status:", err);
+        setHasApplied(data.hasApplied);
+      } catch (error) {
+        console.error("Error checking application:", error);
       } finally {
         setIsCheckingApplication(false);
       }
     };
 
-    checkApplicationStatus();
-  }, [session, jobId]);
-
-  useEffect(() => {
-    if (hasApplied && !isCheckingApplication) {
-      alert("You have already applied to this job.");
+    if (status !== "loading") {
+      checkApplication();
     }
-  }, [hasApplied, isCheckingApplication]);
+  }, [session, jobId, status]);
 
+  // Redirect if not authenticated
   useEffect(() => {
-    if (status !== "loading" && !jobId) {
-      setError("Job ID is missing. Please select a job to apply for.");
-      router.push("/dashboard");
+    if (status === "unauthenticated") {
+      router.push("/login");
     }
-  }, [jobId, status, router]);
+  }, [status, router]);
 
-  type Experience = {
-    jobTitle: string;
-    company_name: string;
-    location: string;
-    responsibilities: string;
+  // Handle form input changes
+  const handleInputChange = (field: string, value: string | number | Date) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  type ExperienceField = keyof Experience;
-
-  const handleAddSkill = () => {
-    if (skills.length < 5) setSkills([...skills, ""]);
-  };
-
-  const handleAddCertification = () => {
-    if (certifications.length < 5) setCertifications([...certifications, ""]);
-  };
-
-  const handleAddLanguage = () => {
-    if (languages.length < 5) setLanguages([...languages, ""]);
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    index: number
+  // Handle experience changes
+  const handleExperienceChange = (
+    index: number,
+    field: string,
+    value: string
   ) => {
-    const name = e.target.name as ExperienceField;
-    const value = e.target.value;
     setExperiences((prev) =>
-      prev.map((exp, idx) => (idx === index ? { ...exp, [name]: value } : exp))
+      prev.map((exp, i) => (i === index ? { ...exp, [field]: value } : exp))
     );
   };
 
+  // Add new experience
   const addExperience = () => {
-    setExperiences([
-      ...experiences,
+    setExperiences((prev) => [
+      ...prev,
       { jobTitle: "", company_name: "", location: "", responsibilities: "" },
     ]);
   };
 
-  const handleResumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setResumeFile(file);
-      setError(null);
+  // Remove experience
+  const removeExperience = (index: number) => {
+    if (experiences.length > 1) {
+      setExperiences((prev) => prev.filter((_, i) => i !== index));
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
+  // Handle array field changes (skills, certifications, languages)
+  const handleArrayChange = (
+    array: string[],
+    setArray: React.Dispatch<React.SetStateAction<string[]>>,
+    index: number,
+    value: string
+  ) => {
+    setArray((prev) => prev.map((item, i) => (i === index ? value : item)));
+  };
 
-    if (!session || session.user.role !== "JOB_SEEKER") {
-      setError("You must be logged in as a Job Seeker to apply.");
-      router.push("/login");
-      return;
+  // Add new array item
+  const addArrayItem = (
+    array: string[],
+    setArray: React.Dispatch<React.SetStateAction<string[]>>
+  ) => {
+    if (array.length < 5) {
+      setArray((prev) => [...prev, ""]);
     }
+  };
 
-    if (!jobId) {
-      setError("Job ID is missing.");
+  // Remove array item
+  const removeArrayItem = (
+    array: string[],
+    setArray: React.Dispatch<React.SetStateAction<string[]>>,
+    index: number
+  ) => {
+    if (array.length > 1) {
+      setArray((prev) => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  // Handle file upload
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === "application/pdf") {
+      setResumeFile(file);
+    } else {
+      toast.error("Please select a PDF file");
+    }
+  };
+
+  // Submit form
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!session?.user?.id || !jobId) {
+      toast.error("Missing required information");
       return;
     }
 
     if (hasApplied) {
-      setError("You have already applied to this job.");
+      toast.error("You have already applied to this job");
       return;
     }
 
     if (!resumeFile) {
-      setError("Please upload a resume (PDF).");
+      toast.error("Please upload your resume (PDF)");
       return;
     }
 
+    // Validate required fields
+    if (
+      !formData.fullName ||
+      !formData.profession ||
+      !formData.careerLevel ||
+      !formData.degreeType
+    ) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Validate experiences
     const validExperiences = experiences.filter(
       (exp) =>
         exp.jobTitle.trim() &&
@@ -213,610 +235,851 @@ export default function ApplicationForm() {
     );
 
     if (validExperiences.length === 0) {
-      setError("At least one valid work experience is required.");
+      toast.error("Please add at least one work experience");
       return;
     }
 
-    let resumeUrl = "";
-    if (resumeFile) {
-      setIsUploading(true);
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          console.log("Pinata resume upload attempt:", attempt);
-          const formData = new FormData();
-          formData.append("file", resumeFile);
-          const response = await fetch("/api/pinata/upload?type=resume", {
-            method: "POST",
-            body: formData,
-          });
-
-          const data = await response.json();
-          if (!response.ok) {
-            throw new Error(data.message || "Failed to upload resume");
-          }
-
-          resumeUrl = data.url;
-          console.log("Pinata resume upload success:", resumeUrl);
-          break;
-        } catch (err) {
-          console.error(
-            "Pinata resume upload error (attempt",
-            attempt,
-            "):",
-            err
-          );
-          if (attempt === 3) {
-            setError(
-              "Failed to upload resume after multiple attempts. Please try again."
-            );
-            setIsUploading(false);
-            return;
-          }
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-      }
-      setIsUploading(false);
-    }
-
-    const formData = {
-      jobId,
-      fullName,
-      email: session.user.email,
-      yearOfBirth: yearOfBirth || new Date().getFullYear(),
-      address,
-      phone,
-      portfolio,
-      profession,
-      careerLevel,
-      coverLetter,
-      experiences: validExperiences,
-      degreeType,
-      institution,
-      graduationDate: graduationDate?.toISOString(),
-      skills: skills.filter((s) => s.trim()),
-      certifications: certifications.filter((c) => c.trim()),
-      languages: languages.filter((l) => l.trim()),
-      projects,
-      volunteerWork,
-      resumeUrl,
-    };
+    setIsSubmitting(true);
 
     try {
-      const validatedData = applicationSchema.parse(formData);
-      console.log("🚀 ~ handleSubmit ~ validatedData:", validatedData);
+      // Upload resume
+      let resumeUrl = "";
+      if (resumeFile) {
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append("file", resumeFile);
 
-      console.log("Submitting form data:", formData);
+        const uploadResponse = await fetch("/api/pinata/upload?type=resume", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload resume");
+        }
+
+        const uploadData = await uploadResponse.json();
+        resumeUrl = uploadData.url;
+        setIsUploading(false);
+      }
+
+      // Submit application
+      const applicationData = {
+        jobId,
+        fullName: formData.fullName,
+        email: session.user.email,
+        yearOfBirth: formData.yearOfBirth,
+        address: formData.address,
+        phone: formData.phone,
+        portfolio: formData.portfolio.trim() || "",
+        profession: formData.profession,
+        careerLevel: formData.careerLevel,
+        coverLetter: formData.coverLetter,
+        experiences: validExperiences,
+        degreeType: formData.degreeType,
+        institution: formData.institution,
+        graduationDate: formData.graduationDate.toISOString(),
+        skills: skills.filter((s) => s.trim()),
+        certifications: certifications.filter((c) => c.trim()),
+        languages: languages.filter((l) => l.trim()),
+        projects: formData.projects.trim() || "",
+        volunteerWork: formData.volunteerWork.trim() || "",
+        resumeUrl,
+      };
+
       const response = await fetch("/api/applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(applicationData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        if (response.status === 409) {
-          setHasApplied(true);
-          throw new Error("You have already applied to this job");
+        if (errorData.details && Array.isArray(errorData.details)) {
+          // Show validation errors
+          const validationErrors = errorData.details
+            .map((err: { message: string }) => err.message)
+            .join(", ");
+          throw new Error(`Validation failed: ${validationErrors}`);
         }
         throw new Error(errorData.error || "Failed to submit application");
       }
 
-      setSuccess("Application submitted successfully!🎉");
+      toast.success("Application submitted successfully! 🎉");
       setHasApplied(true);
+
       setTimeout(() => {
         router.push("/dashboard");
       }, 2000);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "An error occurred while submitting the application";
-      setError(errorMessage);
-      console.error("Error submitting application:", err);
+    } catch (error) {
+      console.error("Error submitting application:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to submit application"
+      );
+    } finally {
+      setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
 
+  // Loading state
   if (status === "loading" || isCheckingApplication) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-slate-600 font-medium">
+            Loading application form...
+          </p>
+        </div>
       </div>
     );
   }
 
-  if (!jobId) {
-    return null;
+  // Not authenticated
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-slate-800 mb-2">
+            Authentication Required
+          </h2>
+          <p className="text-slate-600 mb-4">Please log in to apply for jobs</p>
+          <Button
+            onClick={() => router.push("/login")}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Go to Login
+          </Button>
+        </div>
+      </div>
+    );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-green-300 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto ">
-        <h1 className="flex items-center justify-center gap-3 sm:gap-4 text-2xl sm:text-4xl font-semibold text-green-600 sm:text-green-700 break-words text-center mb-6 sm:mb-8">
-          <span className="absolute left-0 top-4 sm:static sm:mr-5">
-            <Link
-              href="/dashboard"
-              className="p-2 sm:p-2.5 rounded-full hover:bg-green-100 transition-colors"
-            >
-              <BsArrowLeft className="w-5 sm:w-6 h-5 sm:h-6 text-green-600 sm:text-green-700" />
-            </Link>
-          </span>
-          Apply for {title}
-        </h1>
-        {hasApplied ? (
-          <p className="text-center text-red-500 mb-4">
-            You have already applied to this job.
+  // Missing job ID
+  if (!jobId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-slate-800 mb-2">
+            Missing Job Information
+          </h2>
+          <p className="text-slate-600 mb-4">No job ID provided</p>
+          <Button
+            onClick={() => router.push("/dashboard")}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Back to Jobs
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Already applied
+  if (hasApplied) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-slate-800 mb-2">
+            Already Applied
+          </h2>
+          <p className="text-slate-600 mb-4">
+            You have already applied to this job
           </p>
-        ) : (
-          <>
-            {error && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex items-center text-sm text-red-700 bg-red-100 p-3 rounded-md shadow-sm mb-4"
+          <Button
+            onClick={() => router.push("/dashboard")}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Main form render
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <div className="flex items-center gap-4 mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/dashboard")}
+              className="flex items-center gap-2 text-slate-600 hover:text-slate-800"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Jobs
+            </Button>
+          </div>
+          <h1 className="text-3xl font-bold text-slate-800 mb-2">
+            Apply for {jobTitle || "Position"}
+          </h1>
+          <p className="text-slate-600">
+            Fill out the form below to submit your application
+          </p>
+        </div>
+
+        {/* Application Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Personal Information */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-semibold text-sm">1</span>
+              </div>
+              Personal Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label
+                  htmlFor="fullName"
+                  className="text-slate-700 font-medium"
+                >
+                  Full Name *
+                </Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  value={formData.fullName}
+                  onChange={(e) =>
+                    handleInputChange("fullName", e.target.value)
+                  }
+                  className="mt-1"
+                  placeholder="Enter your full name"
+                  required
+                />
+              </div>
+              <div>
+                <Label
+                  htmlFor="yearOfBirth"
+                  className="text-slate-700 font-medium"
+                >
+                  Year of Birth *
+                </Label>
+                <Input
+                  id="yearOfBirth"
+                  type="number"
+                  value={formData.yearOfBirth}
+                  onChange={(e) =>
+                    handleInputChange("yearOfBirth", parseInt(e.target.value))
+                  }
+                  className="mt-1"
+                  min="1950"
+                  max={new Date().getFullYear()}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="phone" className="text-slate-700 font-medium">
+                  Phone Number *
+                </Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  className="mt-1"
+                  placeholder="Enter your phone number"
+                  required
+                />
+              </div>
+              <div>
+                <Label
+                  htmlFor="portfolio"
+                  className="text-slate-700 font-medium"
+                >
+                  Portfolio/Website
+                </Label>
+                <Input
+                  id="portfolio"
+                  type="url"
+                  value={formData.portfolio}
+                  onChange={(e) =>
+                    handleInputChange("portfolio", e.target.value)
+                  }
+                  className="mt-1"
+                  placeholder="https://your-portfolio.com"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="address" className="text-slate-700 font-medium">
+                  Address *
+                </Label>
+                <Textarea
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => handleInputChange("address", e.target.value)}
+                  className="mt-1"
+                  placeholder="Enter your full address"
+                  rows={2}
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Professional Information */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-semibold text-sm">2</span>
+              </div>
+              Professional Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label
+                  htmlFor="profession"
+                  className="text-slate-700 font-medium"
+                >
+                  Profession *
+                </Label>
+                <Input
+                  id="profession"
+                  type="text"
+                  value={formData.profession}
+                  onChange={(e) =>
+                    handleInputChange("profession", e.target.value)
+                  }
+                  className="mt-1"
+                  placeholder="e.g., Software Developer"
+                  required
+                />
+              </div>
+              <div>
+                <Label
+                  htmlFor="careerLevel"
+                  className="text-slate-700 font-medium"
+                >
+                  Career Level *
+                </Label>
+                <Select
+                  value={formData.careerLevel}
+                  onValueChange={(value) =>
+                    handleInputChange("careerLevel", value)
+                  }
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select your career level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {careerLevels.map((level) => (
+                      <SelectItem key={level} value={level}>
+                        {level}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="mt-4">
+              <Label
+                htmlFor="coverLetter"
+                className="text-slate-700 font-medium"
               >
-                <AlertCircle className="w-5 h-5 mr-2" />
-                {error}
-              </motion.div>
-            )}
-            {success && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex items-center text-sm text-green-700 bg-green-100 p-3 rounded-md shadow-sm mb-4"
+                Cover Letter *
+              </Label>
+              <Textarea
+                id="coverLetter"
+                value={formData.coverLetter}
+                onChange={(e) =>
+                  handleInputChange("coverLetter", e.target.value)
+                }
+                className="mt-1"
+                placeholder="Tell us why you're interested in this position..."
+                rows={4}
+                required
+              />
+            </div>
+          </div>
+
+          {/* Work Experience */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-semibold text-sm">3</span>
+              </div>
+              Work Experience
+            </h2>
+            {experiences.map((experience, index) => (
+              <div
+                key={index}
+                className="border border-slate-200 rounded-lg p-4 mb-4"
               >
-                <CheckCircle2 className="w-5 h-5 mr-2" />
-                {success}
-              </motion.div>
-            )}
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <FaUser className="mr-2 h-6 w-6 text-green-600" />
-                  Contact Information
-                </h2>
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="font-medium text-slate-700">
+                    Experience {index + 1}
+                  </h3>
+                  {experiences.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeExperience(index)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="fullName">Full Name</Label>
+                    <Label className="text-slate-700 font-medium">
+                      Job Title *
+                    </Label>
                     <Input
                       type="text"
-                      id="fullName"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="mt-1 w-full"
+                      value={experience.jobTitle}
+                      onChange={(e) =>
+                        handleExperienceChange(
+                          index,
+                          "jobTitle",
+                          e.target.value
+                        )
+                      }
+                      className="mt-1"
+                      placeholder="e.g., Software Engineer"
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="yearOfBirth">Year of Birth</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal mt-1"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {yearOfBirth ? yearOfBirth : <span>Pick a year</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={
-                            yearOfBirth ? new Date(yearOfBirth, 0) : undefined
-                          }
-                          onSelect={(date) =>
-                            setYearOfBirth(date?.getFullYear())
-                          }
-                          startMonth={new Date(1960, 0)}
-                          endMonth={new Date(2017, 11)}
-                          captionLayout="dropdown"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      type="email"
-                      id="email"
-                      value={session?.user.email || ""}
-                      disabled
-                      className="mt-1 w-full"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="address">Current Address</Label>
+                    <Label className="text-slate-700 font-medium">
+                      Company Name *
+                    </Label>
                     <Input
                       type="text"
-                      id="address"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      className="mt-1 w-full"
+                      value={experience.company_name}
+                      onChange={(e) =>
+                        handleExperienceChange(
+                          index,
+                          "company_name",
+                          e.target.value
+                        )
+                      }
+                      className="mt-1"
+                      placeholder="e.g., Tech Corp"
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <div className="mt-1 flex gap-2">
-                      <Select defaultValue="+251">
-                        <SelectTrigger className="w-1/4">
-                          <SelectValue placeholder="+251" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="+251">+251 (Ethiopia)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        type="tel"
-                        id="phone"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="w-3/4"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="portfolio">Portfolio/Website</Label>
-                    <Input
-                      type="url"
-                      id="portfolio"
-                      value={portfolio}
-                      onChange={(e) => setPortfolio(e.target.value)}
-                      className="mt-1 w-full"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="profession">Profession</Label>
+                    <Label className="text-slate-700 font-medium">
+                      Location *
+                    </Label>
                     <Input
                       type="text"
-                      id="profession"
-                      value={profession}
-                      onChange={(e) => setProfession(e.target.value)}
-                      className="mt-1 w-full"
+                      value={experience.location}
+                      onChange={(e) =>
+                        handleExperienceChange(
+                          index,
+                          "location",
+                          e.target.value
+                        )
+                      }
+                      className="mt-1"
+                      placeholder="e.g., New York, NY"
                       required
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="careerLevel">Career Level</Label>
-                    <Select onValueChange={setCareerLevel} value={careerLevel}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select career level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {careerLevels.map((level) => (
-                          <SelectItem key={level} value={level}>
-                            {level}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="md:col-span-2">
+                    <Label className="text-slate-700 font-medium">
+                      Responsibilities *
+                    </Label>
+                    <Textarea
+                      value={experience.responsibilities}
+                      onChange={(e) =>
+                        handleExperienceChange(
+                          index,
+                          "responsibilities",
+                          e.target.value
+                        )
+                      }
+                      className="mt-1"
+                      placeholder="Describe your key responsibilities and achievements..."
+                      rows={3}
+                      required
+                    />
                   </div>
                 </div>
               </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addExperience}
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Another Experience
+            </Button>
+          </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <FaBookOpen className="mr-2 h-6 w-6 text-green-600" />
-                  Cover Letter
-                </h2>
-                <Textarea
-                  id="coverLetter"
-                  value={coverLetter}
-                  onChange={(e) => setCoverLetter(e.target.value)}
-                  className="w-full"
-                  rows={4}
+          {/* Education */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-semibold text-sm">4</span>
+              </div>
+              Education
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label
+                  htmlFor="degreeType"
+                  className="text-slate-700 font-medium"
+                >
+                  Degree Type *
+                </Label>
+                <Select
+                  value={formData.degreeType}
+                  onValueChange={(value) =>
+                    handleInputChange("degreeType", value)
+                  }
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select your degree" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {degreeTypes.map((degree) => (
+                      <SelectItem key={degree} value={degree}>
+                        {degree}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label
+                  htmlFor="institution"
+                  className="text-slate-700 font-medium"
+                >
+                  Institution *
+                </Label>
+                <Input
+                  id="institution"
+                  type="text"
+                  value={formData.institution}
+                  onChange={(e) =>
+                    handleInputChange("institution", e.target.value)
+                  }
+                  className="mt-1"
+                  placeholder="e.g., University of Technology"
                   required
                 />
               </div>
-
-              <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <FaBriefcase className="mr-2 h-6 w-6 text-green-600" />
-                  Work Experience
-                </h2>
-                {experiences.map((experience, index) => (
-                  <div key={index} className="space-y-4 mb-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor={`jobTitle-${index}`}>Job Title</Label>
-                        <Input
-                          type="text"
-                          id={`jobTitle-${index}`}
-                          name="jobTitle"
-                          value={experience.jobTitle}
-                          onChange={(e) => handleInputChange(e, index)}
-                          className="mt-1 w-full"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor={`company-${index}`}>Company Name</Label>
-                        <Input
-                          type="text"
-                          id={`company-${index}`}
-                          name="company_name"
-                          value={experience.company_name}
-                          onChange={(e) => handleInputChange(e, index)}
-                          className="mt-1 w-full"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor={`location-${index}`}>Location</Label>
-                      <Input
-                        type="text"
-                        id={`location-${index}`}
-                        name="location"
-                        value={experience.location}
-                        onChange={(e) => handleInputChange(e, index)}
-                        className="mt-1 w-full"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor={`responsibilities-${index}`}>
-                        Responsibilities and Achievements
-                      </Label>
-                      <Textarea
-                        id={`responsibilities-${index}`}
-                        name="responsibilities"
-                        value={experience.responsibilities}
-                        onChange={(e) => handleInputChange(e, index)}
-                        className="mt-1 w-full"
-                        rows={4}
-                        required
-                      />
-                    </div>
-                    {experiences.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newExperiences = [...experiences];
-                          newExperiences.splice(index, 1);
-                          setExperiences(newExperiences);
-                        }}
-                        className="text-red-500 hover:underline"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <div className="flex justify-end mt-4">
-                  <button
-                    type="button"
-                    onClick={addExperience}
-                    className="flex items-center text-green-600 hover:underline"
-                  >
-                    <FiPlus className="mr-2" /> Add Experience
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <FaGraduationCap className="mr-2 h-6 w-6 text-green-600" />
-                  Education
-                </h2>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="degree">Degree Type</Label>
-                    <Select onValueChange={setDegreeType} value={degreeType}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select degree type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {degreeTypes.map((degree) => (
-                          <SelectItem key={degree} value={degree}>
-                            {degree}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="institution">Institution</Label>
-                    <Input
-                      type="text"
-                      id="institution"
-                      value={institution}
-                      onChange={(e) => setInstitution(e.target.value)}
-                      className="mt-1 w-full"
-                      required
+              <div>
+                <Label className="text-slate-700 font-medium">
+                  Graduation Date *
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal mt-1"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.graduationDate
+                        ? format(formData.graduationDate, "PPP")
+                        : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={formData.graduationDate}
+                      onSelect={(date) =>
+                        date && handleInputChange("graduationDate", date)
+                      }
+                      autoFocus
                     />
-                  </div>
-                  <div>
-                    <Label htmlFor="graduationDate">Graduation Date</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
-                        >
-                          <FaCalendar className="mr-2 h-4 w-4" />
-                          {graduationDate ? (
-                            format(graduationDate, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={graduationDate}
-                          onSelect={setGraduationDate}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
+                  </PopoverContent>
+                </Popover>
               </div>
+            </div>
+          </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <FaCode className="mr-2 h-6 w-6 text-green-600" />
-                  Skills
-                </h2>
-                <div className="space-y-2">
-                  {skills.map((skill, index) => (
-                    <Input
-                      key={index}
-                      type="text"
-                      placeholder={`Skill ${index + 1}`}
-                      value={skill}
-                      onChange={(e) => {
-                        const newSkills = [...skills];
-                        newSkills[index] = e.target.value;
-                        setSkills(newSkills);
-                      }}
-                      className="w-full"
-                    />
-                  ))}
-                  {skills.length < 5 && (
+          {/* Skills & Qualifications */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-semibold text-sm">5</span>
+              </div>
+              Skills & Qualifications
+            </h2>
+
+            {/* Skills */}
+            <div className="mb-6">
+              <Label className="text-slate-700 font-medium mb-2 block">
+                Skills
+              </Label>
+              {skills.map((skill, index) => (
+                <div key={index} className="flex gap-2 mb-2">
+                  <Input
+                    type="text"
+                    value={skill}
+                    onChange={(e) =>
+                      handleArrayChange(
+                        skills,
+                        setSkills,
+                        index,
+                        e.target.value
+                      )
+                    }
+                    placeholder="e.g., JavaScript, React, Node.js"
+                    className="flex-1"
+                  />
+                  {skills.length > 1 && (
                     <Button
                       type="button"
-                      onClick={handleAddSkill}
-                      variant="outline"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeArrayItem(skills, setSkills, index)}
+                      className="text-red-600 hover:text-red-700"
                     >
-                      Add Skill
+                      <X className="w-4 h-4" />
                     </Button>
                   )}
                 </div>
-              </div>
+              ))}
+              {skills.length < 5 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addArrayItem(skills, setSkills)}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Skill
+                </Button>
+              )}
+            </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <FaAward className="mr-2 h-6 w-6 text-green-600" />
-                  Certifications
-                </h2>
-                <div className="space-y-2">
-                  {certifications.map((certification, index) => (
-                    <Input
-                      key={index}
-                      type="text"
-                      placeholder={`Certification ${index + 1}`}
-                      value={certification}
-                      onChange={(e) => {
-                        const newCertifications = [...certifications];
-                        newCertifications[index] = e.target.value;
-                        setCertifications(newCertifications);
-                      }}
-                      className="w-full"
-                    />
-                  ))}
-                  {certifications.length < 5 && (
+            {/* Certifications */}
+            <div className="mb-6">
+              <Label className="text-slate-700 font-medium mb-2 block">
+                Certifications
+              </Label>
+              {certifications.map((cert, index) => (
+                <div key={index} className="flex gap-2 mb-2">
+                  <Input
+                    type="text"
+                    value={cert}
+                    onChange={(e) =>
+                      handleArrayChange(
+                        certifications,
+                        setCertifications,
+                        index,
+                        e.target.value
+                      )
+                    }
+                    placeholder="e.g., AWS Certified Developer"
+                    className="flex-1"
+                  />
+                  {certifications.length > 1 && (
                     <Button
                       type="button"
-                      onClick={handleAddCertification}
-                      variant="outline"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        removeArrayItem(
+                          certifications,
+                          setCertifications,
+                          index
+                        )
+                      }
+                      className="text-red-600 hover:text-red-700"
                     >
-                      Add Certification
+                      <X className="w-4 h-4" />
                     </Button>
                   )}
                 </div>
-              </div>
+              ))}
+              {certifications.length < 5 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    addArrayItem(certifications, setCertifications)
+                  }
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Certification
+                </Button>
+              )}
+            </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <FaLanguage className="mr-2 h-6 w-6 text-green-600" />
-                  Languages
-                </h2>
-                <div className="space-y-2">
-                  {languages.map((language, index) => (
-                    <Input
-                      key={index}
-                      type="text"
-                      placeholder={`Language ${index + 1}`}
-                      value={language}
-                      onChange={(e) => {
-                        const newLanguages = [...languages];
-                        newLanguages[index] = e.target.value;
-                        setLanguages(newLanguages);
-                      }}
-                      className="w-full"
-                    />
-                  ))}
-                  {languages.length < 5 && (
+            {/* Languages */}
+            <div>
+              <Label className="text-slate-700 font-medium mb-2 block">
+                Languages
+              </Label>
+              {languages.map((lang, index) => (
+                <div key={index} className="flex gap-2 mb-2">
+                  <Input
+                    type="text"
+                    value={lang}
+                    onChange={(e) =>
+                      handleArrayChange(
+                        languages,
+                        setLanguages,
+                        index,
+                        e.target.value
+                      )
+                    }
+                    placeholder="e.g., English (Native), Spanish (Fluent)"
+                    className="flex-1"
+                  />
+                  {languages.length > 1 && (
                     <Button
                       type="button"
-                      onClick={handleAddLanguage}
-                      variant="outline"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        removeArrayItem(languages, setLanguages, index)
+                      }
+                      className="text-red-600 hover:text-red-700"
                     >
-                      Add Language
+                      <X className="w-4 h-4" />
                     </Button>
                   )}
                 </div>
-              </div>
+              ))}
+              {languages.length < 5 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addArrayItem(languages, setLanguages)}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Language
+                </Button>
+              )}
+            </div>
+          </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <FaCode className="mr-2 h-6 w-6 text-green-600" />
-                  Projects
-                </h2>
+          {/* Additional Information */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-semibold text-sm">6</span>
+              </div>
+              Additional Information
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <Label
+                  htmlFor="projects"
+                  className="text-slate-700 font-medium"
+                >
+                  Notable Projects
+                </Label>
                 <Textarea
                   id="projects"
-                  value={projects}
-                  onChange={(e) => setProjects(e.target.value)}
-                  className="w-full"
-                  rows={4}
+                  value={formData.projects}
+                  onChange={(e) =>
+                    handleInputChange("projects", e.target.value)
+                  }
+                  className="mt-1"
+                  placeholder="Describe any notable projects you've worked on..."
+                  rows={3}
                 />
               </div>
-
-              <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <FaHandHoldingHeart className="mr-2 h-6 w-6 text-green-600" />
+              <div>
+                <Label
+                  htmlFor="volunteerWork"
+                  className="text-slate-700 font-medium"
+                >
                   Volunteer Work
-                </h2>
+                </Label>
                 <Textarea
                   id="volunteerWork"
-                  value={volunteerWork}
-                  onChange={(e) => setVolunteerWork(e.target.value)}
-                  className="w-full"
-                  rows={4}
+                  value={formData.volunteerWork}
+                  onChange={(e) =>
+                    handleInputChange("volunteerWork", e.target.value)
+                  }
+                  className="mt-1"
+                  placeholder="Describe any volunteer work or community involvement..."
+                  rows={3}
                 />
               </div>
+            </div>
+          </div>
 
-              <div className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                  <FaFileAlt className="mr-2 h-6 w-6 text-green-600" />
-                  Upload Resume
-                </h2>
-                <Input
-                  type="file"
-                  id="resume"
-                  accept="application/pdf"
-                  onChange={handleResumeChange}
-                  className="w-full"
-                  required
-                />
-                {isUploading && (
-                  <div className="flex items-center mt-2">
-                    <Loader2 className="w-5 h-5 animate-spin text-green-600 mr-2" />
-                    <span>Uploading resume...</span>
-                  </div>
+          {/* Resume Upload */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-semibold text-sm">7</span>
+              </div>
+              Resume Upload
+            </h2>
+            <div>
+              <Label htmlFor="resume" className="text-slate-700 font-medium">
+                Upload Resume (PDF) *
+              </Label>
+              <Input
+                id="resume"
+                type="file"
+                accept=".pdf"
+                onChange={handleFileChange}
+                className="mt-1"
+                required
+              />
+              {resumeFile && (
+                <p className="text-sm text-green-600 mt-2">
+                  ✓ {resumeFile.name} selected
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+              <p className="text-sm text-slate-600">
+                By submitting this application, you confirm that all information
+                provided is accurate.
+              </p>
+              <Button
+                type="submit"
+                disabled={isSubmitting || isUploading}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 min-w-[150px]"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    {isUploading ? "Uploading..." : "Submitting..."}
+                  </>
+                ) : (
+                  "Submit Application"
                 )}
-              </div>
-
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  className="bg-green-600 hover:bg-green-700"
-                  disabled={hasApplied || isUploading}
-                >
-                  {hasApplied
-                    ? "Already Applied"
-                    : isUploading
-                    ? "Uploading..."
-                    : "Submit Application"}
-                </Button>
-              </div>
-            </form>
-          </>
-        )}
+              </Button>
+            </div>
+          </div>
+        </form>
       </div>
+
+      {/* Loading Overlay */}
+      {(isSubmitting || isUploading) && (
+        <Loading
+          variant="overlay"
+          text={
+            isUploading ? "Uploading resume..." : "Submitting application..."
+          }
+          icon="file"
+        />
+      )}
     </div>
   );
 }

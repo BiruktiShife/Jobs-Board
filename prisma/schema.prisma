@@ -16,6 +16,7 @@ model Job {
   deadline         DateTime
   site             EmploymentType
   about_job        String
+  status           JobStatus        @default(PENDING)
   created_at       DateTime         @default(now())
   updated_at       DateTime         @default(now()) @updatedAt
   companyId        String
@@ -95,16 +96,19 @@ model Session {
 }
 
 model Company {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  adminId   String?  @unique
-  createdAt DateTime @default(now())
-  about     String?
-  logo      String?
-  userId    String?  @unique
-  admin     User?    @relation("CompanyAdmin", fields: [adminId], references: [id])
-  jobs      Job[]
-  users     User[]   @relation("CompanyUsers")
+  id          String        @id @default(cuid())
+  name        String        @unique
+  adminId     String?       @unique
+  adminEmail  String        @unique
+  address     String
+  logo        String
+  licenseUrl  String
+  status      CompanyStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  about       String?
+  admin       User?         @relation("CompanyAdmin", fields: [adminId], references: [id])
+  jobs        Job[]
+  users       User[]        @relation("CompanyUsers")
 }
 
 model Application {
@@ -159,4 +163,16 @@ enum Role {
   ADMIN
   JOB_SEEKER
   COMPANY_ADMIN
+}
+
+enum CompanyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum JobStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

@@ -3,7 +3,7 @@ import { JWT } from "next-auth/jwt";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "@/app/lib/prisma";
+import { prisma } from "@/lib/prisma-server";
 import bcrypt from "bcryptjs";
 
 interface CustomUser extends User {

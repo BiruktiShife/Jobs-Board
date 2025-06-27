@@ -50,8 +50,8 @@ export function MultiSelect({
           backgroundColor: isSelected
             ? "#d1fae5"
             : isFocused
-            ? "#f0fdf4"
-            : "white",
+              ? "#f0fdf4"
+              : "white",
           color: "black",
           padding: "8px 12px",
           cursor: "pointer",
@@ -59,11 +59,13 @@ export function MultiSelect({
         }),
         menu: (base) => ({
           ...base,
+          backgroundColor: "white",
           maxHeight: "150px",
           overflowY: "auto",
+          border: "none",
+          boxShadow:
+            "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
           borderRadius: "4px",
-          border: "1px solid #d1d5db",
-          boxShadow: "0 -4px 6px rgba(0, 0, 0, 0.1)",
           zIndex: 9999,
           marginBottom: "4px",
           marginTop: 0,

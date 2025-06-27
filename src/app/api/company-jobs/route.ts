@@ -1,6 +1,6 @@
 // src/app/api/company-jobs/route.ts
 import { NextResponse } from "next/server";
-import { prisma } from "@/app/lib/prisma";
+import { prisma } from "@/lib/prisma-server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
 
@@ -12,15 +12,27 @@ export async function GET() {
   }
 
   try {
+    // Check if company exists and is approved
     const company = await prisma.company.findUnique({
-      where: { adminId: session.user.id },
-      select: { id: true, name: true },
+      where: { adminEmail: session.user.email! },
+      select: { id: true, name: true, status: true },
     });
 
     if (!company) {
       return NextResponse.json(
-        { error: `No company found for admin ID: ${session.user.id}` },
+        { error: `No company found for admin email: ${session.user.email}` },
         { status: 404 }
+      );
+    }
+
+    if (company.status !== "APPROVED") {
+      console.log("Company not approved:", session.user.email, company.status);
+      return NextResponse.json(
+        {
+          error: "Company not approved",
+          status: company.status,
+        },
+        { status: 403 }
       );
     }
 

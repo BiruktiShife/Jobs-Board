@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/app/lib/prisma";
+import { prisma } from "@/lib/prisma-server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
 
@@ -23,10 +23,17 @@ export async function GET() {
     // Fetch jobs where the job's area is in the user's studyArea array
     const jobs = await prisma.job.findMany({
       where: {
-        area:
-          user.studyArea && user.studyArea.length > 0
-            ? { in: user.studyArea }
-            : undefined, // Use 'in' for array matching
+        AND: [
+          {
+            area:
+              user.studyArea && user.studyArea.length > 0
+                ? { in: user.studyArea }
+                : undefined, // Use 'in' for array matching
+          },
+          {
+            status: "APPROVED", // Only show approved jobs in recommendations
+          },
+        ],
       },
       select: {
         id: true,
@@ -75,8 +82,8 @@ export async function GET() {
           job.site === "Full_time"
             ? "Full-time"
             : job.site === "Part_time"
-            ? "Part-time"
-            : job.site,
+              ? "Part-time"
+              : job.site,
         qualifications: job.qualifications.map((q) => q.value),
         responsibilities: job.responsibilities.map((r) => r.value),
         requiredSkills: job.requiredSkills.map((s) => s.value),

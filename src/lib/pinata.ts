@@ -9,23 +9,38 @@ const pinata = new PinataSDK({
 
 export async function uploadFile(
   file: File,
-  isResume: boolean = false
+  isResume: boolean = false,
+  userId?: string,
+  allowAnonymous: boolean = false,
+  uploadType?: string
 ): Promise<string> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    console.error("Pinata upload: Unauthorized, no session or user ID");
-    throw new Error("Unauthorized");
+  // If userId is provided, use it; otherwise get from session
+  let finalUserId = userId;
+
+  if (!finalUserId) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      if (!allowAnonymous) {
+        console.error("Pinata upload: Unauthorized, no session or user ID");
+        throw new Error("Unauthorized");
+      }
+      // For anonymous uploads (like company registration)
+      finalUserId = "anonymous";
+      console.log("Pinata upload: Proceeding with anonymous upload");
+    } else {
+      finalUserId = session.user.id;
+    }
   }
 
   const allowedTypes = isResume
     ? ["application/pdf"]
-    : ["image/jpeg", "image/png", "image/gif"];
+    : ["image/jpg", "image/png", "image/gif"];
   if (!allowedTypes.includes(file.type)) {
     console.error("Pinata upload: Invalid file type:", file.type);
     throw new Error(
       isResume
         ? "Only PDF files are allowed"
-        : "Only image files (JPEG, PNG, GIF) are allowed"
+        : "Only image files (JPG, PNG, GIF) are allowed"
     );
   }
 
@@ -40,18 +55,28 @@ export async function uploadFile(
   try {
     console.log(
       "Pinata upload: Starting upload for user:",
-      session.user.id,
+      finalUserId,
       "File:",
       file.name
     );
+    // Determine file type for metadata
+    let fileType = "profile";
+    let fileName = `profile-${finalUserId}-${Date.now()}`;
+
+    if (uploadType === "company-license") {
+      fileType = "company-license";
+      fileName = `license-${finalUserId}-${Date.now()}`;
+    } else if (isResume) {
+      fileType = "resume";
+      fileName = `resume-${finalUserId}-${Date.now()}`;
+    }
+
     const upload = await pinata.upload.public.file(file, {
       metadata: {
-        name: isResume
-          ? `resume-${session.user.id}-${Date.now()}`
-          : `profile-${session.user.id}-${Date.now()}`,
+        name: fileName,
         keyvalues: {
-          userId: session.user.id,
-          type: isResume ? "resume" : "profile",
+          userId: finalUserId,
+          type: fileType,
         },
       },
     });

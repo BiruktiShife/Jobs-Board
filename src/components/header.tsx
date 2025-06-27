@@ -47,8 +47,20 @@ interface UserProfile {
   image?: string | null;
 }
 
+interface CompanyProfile {
+  id: string;
+  name: string;
+  adminEmail: string;
+  address: string;
+  logo: string;
+  licenseUrl: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  createdAt: string;
+}
+
 export function Profile({ email }: ProfileProps) {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [company, setCompany] = useState<CompanyProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -62,15 +74,25 @@ export function Profile({ email }: ProfileProps) {
 
     try {
       console.log("Profile: Fetching profile for email:", email);
-      const response = await fetch("/api/user/profile");
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch profile");
+      if (session?.user?.role === "COMPANY_ADMIN") {
+        const response = await fetch("/api/company/profile");
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to fetch profile");
+        }
+        const data: CompanyProfile = await response.json();
+        console.log("Profile: Fetched company:", data);
+        setCompany(data);
+      } else {
+        const response = await fetch("/api/user/profile");
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to fetch profile");
+        }
+        const data: UserProfile = await response.json();
+        console.log("Profile: Fetched user:", data);
+        setUser(data);
       }
-      const data: UserProfile = await response.json();
-      console.log("Profile: Fetched user:", data);
-      console.log("Profile: Fetched image URL:", data.image);
-      setUser(data);
     } catch (error) {
       console.error("Profile: Error fetching profile:", error);
     } finally {
@@ -85,7 +107,11 @@ export function Profile({ email }: ProfileProps) {
   }, [email]);
 
   const handleProfileClick = () => {
-    router.push("/profile");
+    if (session?.user?.role === "COMPANY_ADMIN") {
+      router.push("/company-profile");
+    } else {
+      router.push("/profile");
+    }
   };
 
   const handleSettingsClick = () => {
@@ -110,26 +136,36 @@ export function Profile({ email }: ProfileProps) {
     return <div className="w-10 h-10 bg-gray-300 rounded-full animate-pulse" />;
   }
 
-  const displayName = user?.name || email;
+  const displayName =
+    session.user.role === "COMPANY_ADMIN"
+      ? company?.name || email
+      : user?.name || email;
   const initial = displayName.charAt(0).toUpperCase();
-  const profileImage = pinataRewriteUrl(user?.image);
+  const profileImage =
+    session.user.role === "COMPANY_ADMIN"
+      ? pinataRewriteUrl(company?.logo)
+      : pinataRewriteUrl(user?.image);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div className="relative h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-shadow border border-green-100 overflow-hidden flex items-center cursor-pointer hover:opacity-80">
+        <div className="relative h-10 w-10 rounded-full shadow-lg hover:shadow-xl transition-shadow border border-green-100 overflow-hidden flex items-center cursor-pointer hover:opacity-80">
           {profileImage ? (
             <Image
               src={profileImage}
               alt="Profile"
               fill
               className="object-cover"
-              onError={() =>
-                setUser((prev) => (prev ? { ...prev, image: null } : null))
-              }
+              onError={() => {
+                if (session.user.role === "COMPANY_ADMIN") {
+                  setCompany((prev) => (prev ? { ...prev, logo: "" } : null));
+                } else {
+                  setUser((prev) => (prev ? { ...prev, image: null } : null));
+                }
+              }}
             />
           ) : (
-            <div className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center text-lg font-bold">
+            <div className="w-full h-full bg-green-500 text-white flex items-center justify-center text-lg font-bold">
               {initial}
             </div>
           )}

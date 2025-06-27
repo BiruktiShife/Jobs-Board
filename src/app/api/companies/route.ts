@@ -1,103 +1,93 @@
-import { NextResponse, NextRequest } from "next/server";
-import { prisma } from "@/app/lib/prisma";
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma-server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
-import bcrypt from "bcryptjs";
-import { writeFile } from "fs/promises";
-import path from "path";
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { searchParams } = new URL(request.url);
+  const adminId = searchParams.get("adminId");
+  const status = searchParams.get("status");
 
   try {
-    const formData = await request.formData();
-    const name = formData.get("name") as string;
-    const logoFile = formData.get("logo") as File | null;
-    const about = formData.get("about") as string;
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    if (!session?.user?.id) {
+      console.error("Companies: Unauthorized access attempt, no session");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    if (!name || !email || !password) {
-      return NextResponse.json(
-        { error: "Name, email, and password are required" },
-        { status: 400 }
+    // Log session role for debugging
+    console.log("Companies: Session user role:", session.user.role);
+
+    // Only admins can query by status or access other users' companies
+    if (
+      session.user.role !== "ADMIN" &&
+      (status || (adminId && adminId !== session.user.id))
+    ) {
+      console.error(
+        "Companies: Forbidden access attempt by non-admin, userId:",
+        session.user.id,
+        "query:",
+        { adminId, status }
       );
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    let logoUrl = "";
-    if (logoFile) {
-      const fileName = `${Date.now()}-${logoFile.name}`;
-      const filePath = path.join(process.cwd(), "public", fileName);
-      const buffer = Buffer.from(await logoFile.arrayBuffer());
-      await writeFile(filePath, buffer);
-      logoUrl = `/${fileName}`;
+    const where: any = {};
+    if (adminId) {
+      where.adminId = adminId;
+    }
+    if (status) {
+      where.status = status.toUpperCase(); // Ensure PENDING, APPROVED, REJECTED
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const company = await prisma.$transaction(async (prisma) => {
-      const user = await prisma.user.create({
-        data: {
-          email,
-          password: hashedPassword,
-          role: "COMPANY_ADMIN",
-        },
-      });
-
-      return prisma.company.create({
-        data: {
-          name,
-          logo: logoUrl || null,
-          about,
-          adminId: user.id,
-        },
-      });
+    const companies = await prisma.company.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        adminEmail: true,
+        adminId: true,
+        address: true,
+        logo: true,
+        licenseUrl: true,
+        status: true,
+        createdAt: true,
+      },
     });
 
-    return NextResponse.json(
-      { message: `Company "${company.name}" created successfully`, company },
-      { status: 201 }
+    const formattedCompanies = companies.map((company) => ({
+      id: company.id,
+      name: company.name,
+      adminEmail: company.adminEmail,
+      adminId: company.adminId,
+      address: company.address,
+      logo: company.logo,
+      licenseUrl: company.licenseUrl,
+      status: company.status,
+      createdAt: company.createdAt.toISOString(),
+    }));
+
+    console.log(
+      "Companies: Fetched",
+      formattedCompanies.length,
+      "companies for query:",
+      { adminId, status }
     );
+    return NextResponse.json(formattedCompanies);
   } catch (error) {
-    console.error("Create company error:", error);
+    console.error("Companies error:", error);
+    if (error instanceof Error && error.message.includes("fetch failed")) {
+      return NextResponse.json(
+        { error: "Database connection failed. Please try again later." },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
-      { error: "Failed to create company" },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to fetch companies",
+      },
       { status: 500 }
     );
   }
-}
-
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const adminId = searchParams.get("adminId");
-
-  if (adminId) {
-    try {
-      const company = await prisma.company.findUnique({
-        where: { adminId },
-        select: { id: true, name: true, logo: true },
-      });
-      if (!company) {
-        return NextResponse.json(
-          { error: "Company not found" },
-          { status: 404 }
-        );
-      }
-      return NextResponse.json(company);
-    } catch (error) {
-      console.error("Error fetching company:", error);
-      return NextResponse.json(
-        { error: "Failed to fetch company" },
-        { status: 500 }
-      );
-    }
-  }
-
-  const companies = await prisma.company.findMany({
-    select: { id: true, name: true, logo: true },
-  });
-  return NextResponse.json(companies);
 }

@@ -5,15 +5,21 @@ import { uploadFile } from "@/lib/pinata";
 
 export async function POST(request: Request) {
   try {
+    const url = new URL(request.url);
+    const type = url.searchParams.get("type");
+    const isResume = type === "resume" || type === "company-license";
+    const isCompanyRegistration =
+      type === "company-registration" ||
+      type === "profile" ||
+      type === "company-license";
+
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+
+    // Allow unauthenticated uploads for company registration
+    if (!session?.user?.id && !isCompanyRegistration) {
       console.error("Pinata upload route: Unauthorized, no session or user ID");
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-
-    const url = new URL(request.url);
-    const type = url.searchParams.get("type");
-    const isResume = type === "resume";
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
@@ -30,9 +36,18 @@ export async function POST(request: Request) {
       "Pinata upload route: Received file:",
       file.name,
       "Type:",
-      type
+      type,
+      "Authenticated:",
+      !!session?.user?.id
     );
-    const urlResult = await uploadFile(file, isResume);
+
+    const urlResult = await uploadFile(
+      file,
+      isResume,
+      session?.user?.id,
+      isCompanyRegistration,
+      type || undefined
+    );
     console.log("Pinata upload route: Upload successful, URL:", urlResult);
     return NextResponse.json({ url: urlResult });
   } catch (error) {

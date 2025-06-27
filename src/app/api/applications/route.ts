@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/app/lib/prisma";
+import { prisma } from "@/lib/prisma-server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { z } from "zod";
@@ -12,7 +12,10 @@ export const applicationSchema = z.object({
   yearOfBirth: z.number().int().min(1900).max(new Date().getFullYear()),
   address: z.string().min(1, "Address is required"),
   phone: z.string().min(1, "Phone number is required"),
-  portfolio: z.string().url().optional(),
+  portfolio: z
+    .string()
+    .transform((val) => (val === "" ? undefined : val))
+    .pipe(z.string().url().optional()),
   profession: z.string().min(1, "Profession is required"),
   careerLevel: z.string().min(1, "Career level is required"),
   coverLetter: z.string().min(1, "Cover letter is required"),
@@ -32,9 +35,15 @@ export const applicationSchema = z.object({
   skills: z.array(z.string()).max(5),
   certifications: z.array(z.string()).max(5),
   languages: z.array(z.string()).max(5),
-  projects: z.string().optional(),
-  volunteerWork: z.string().optional(),
-  resumeUrl: z.string().url("Invalid resume URL"),
+  projects: z
+    .string()
+    .transform((val) => (val === "" ? undefined : val))
+    .optional(),
+  volunteerWork: z
+    .string()
+    .transform((val) => (val === "" ? undefined : val))
+    .optional(),
+  resumeUrl: z.string().min(1, "Resume is required").url("Invalid resume URL"),
 });
 
 export async function POST(request: Request) {
