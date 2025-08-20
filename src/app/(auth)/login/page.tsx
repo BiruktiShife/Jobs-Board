@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import { SocialButton } from "@/components/social-button";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
@@ -273,7 +273,7 @@ export default function LoginPage() {
 
                 <div className="text-center space-y-4">
                   <p className="text-sm text-gray-600">
-                    Don't have an account?{" "}
+                    Don&apos;t have an account?{" "}
                     <Link
                       href="/signup"
                       className="text-blue-600 hover:text-blue-700 font-semibold"

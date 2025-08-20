@@ -20,13 +20,9 @@ import {
   Eye,
   EyeOff,
   CheckCircle,
-  Star,
   Shield,
   ArrowRight,
-  Briefcase,
   Target,
-  Award,
-  Zap,
 } from "lucide-react";
 
 export default function CompanyLogin() {
@@ -54,7 +50,7 @@ export default function CompanyLogin() {
         toast.success("Login successful");
         router.push("/dashboard/company");
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred during login");
     } finally {
       setLoading(false);
@@ -233,7 +229,7 @@ export default function CompanyLogin() {
 
                 <div className="text-center space-y-4">
                   <p className="text-sm text-gray-600">
-                    Don't have a company account?{" "}
+                    Don&apos;t have a company account?{" "}
                     <Link
                       href="/register/company"
                       className="text-emerald-600 hover:text-emerald-700 font-semibold"
