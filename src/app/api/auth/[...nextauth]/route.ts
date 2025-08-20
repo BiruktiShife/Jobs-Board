@@ -40,6 +40,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        role: { label: "Role", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -62,6 +63,20 @@ export const authOptions: NextAuthOptions = {
           if (!isValid) {
             throw new Error("Invalid password");
           }
+
+          // Role-based login restriction
+          if (
+            credentials.role === "COMPANY_ADMIN" &&
+            user.role !== "COMPANY_ADMIN"
+          ) {
+            throw new Error("Please use the job seeker login page");
+          }
+
+          if (!credentials.role && user.role === "COMPANY_ADMIN") {
+            throw new Error("Please use the company login page");
+          }
+
+          // Allow admin users to login through main login page (no role restriction needed)
 
           return {
             id: user.id,

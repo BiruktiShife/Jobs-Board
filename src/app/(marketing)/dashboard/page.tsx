@@ -7,7 +7,6 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
-  Loader2,
   Search,
   Filter,
   Grid,
@@ -107,7 +106,7 @@ export default function Dashboard() {
   const [allJobs, setAllJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [recommendedJobs, setRecommendedJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [recommendedPage, setRecommendedPage] = useState(1);
@@ -193,14 +192,6 @@ export default function Dashboard() {
     // The filtering is handled by useEffect, so we just need to trigger it
     setCurrentPage(1);
   };
-
-  if (status === "loading" || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-green-100 p-3 sm:p-8">
-        <Loader2 className="w-6 h-6 sm:w-10 sm:h-10 animate-spin text-green-600" />
-      </div>
-    );
-  }
 
   if (!session || !session.user.email) {
     return null;

@@ -22,7 +22,6 @@ import {
   ArrowRight,
   Briefcase,
   UserCheck,
-  Settings,
 } from "lucide-react";
 
 export default function Home() {
@@ -114,7 +113,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
           {/* Job Seekers Card */}
           <Card className="relative overflow-hidden border-0 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-100 hover:shadow-2xl transition-all duration-300 group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-200 rounded-full -translate-y-16 translate-x-16 opacity-20"></div>
@@ -213,54 +212,6 @@ export default function Home() {
                     Company Login
                   </Button>
                 </Link>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Admin Card */}
-          <Card className="relative overflow-hidden border-0 shadow-xl bg-gradient-to-br from-emerald-50 to-teal-100 hover:shadow-2xl transition-all duration-300 group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-200 rounded-full -translate-y-16 translate-x-16 opacity-20"></div>
-            <CardHeader className="relative">
-              <div className="w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Settings className="h-8 w-8 text-white" />
-              </div>
-              <CardTitle className="text-2xl font-bold text-gray-900">
-                Platform Admin
-              </CardTitle>
-              <CardDescription className="text-gray-600 text-base">
-                Manage the platform, approve companies, and oversee operations
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Company approvals</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Job moderation</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-gray-700">Analytics dashboard</span>
-                </div>
-              </div>
-              <div className="space-y-3 pt-4">
-                <Link href="/login" className="block">
-                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-12 text-lg font-semibold group">
-                    Admin Access
-                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-                <div className="text-center">
-                  <Badge
-                    variant="outline"
-                    className="bg-emerald-50 text-emerald-700 border-emerald-200"
-                  >
-                    Authorized Personnel Only
-                  </Badge>
-                </div>
               </div>
             </CardContent>
           </Card>
