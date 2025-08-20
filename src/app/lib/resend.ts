@@ -1,6 +1,17 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend only when API key is available
+let resend: Resend | null = null;
+
+function getResendClient(): Resend {
+  if (!resend && process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  if (!resend) {
+    throw new Error("Resend API key is not configured");
+  }
+  return resend;
+}
 
 type EmailParams = {
   to: string;
@@ -18,7 +29,10 @@ export async function sendEmail({
   from,
 }: EmailParams) {
   try {
-    const data = await resend.emails.send({
+    // Only initialize Resend when actually sending email
+    const resendClient = getResendClient();
+
+    const data = await resendClient.emails.send({
       from: from || process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
       to,
       subject,
@@ -225,6 +239,12 @@ export async function sendCompanyApprovalEmail(
   adminEmail: string
 ): Promise<boolean> {
   try {
+    // Check if email service is configured
+    if (!process.env.RESEND_API_KEY) {
+      console.warn("Resend API key not configured, skipping email");
+      return false;
+    }
+
     const emailTemplate = getCompanyApprovalEmailTemplate(
       companyName,
       adminEmail
@@ -251,6 +271,12 @@ export async function sendCompanyRejectionEmail(
   reason?: string
 ): Promise<boolean> {
   try {
+    // Check if email service is configured
+    if (!process.env.RESEND_API_KEY) {
+      console.warn("Resend API key not configured, skipping email");
+      return false;
+    }
+
     const emailTemplate = getCompanyRejectionEmailTemplate(
       companyName,
       adminEmail,
