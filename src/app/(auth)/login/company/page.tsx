@@ -242,13 +242,6 @@ export default function CompanyLogin() {
                     <Link href="/login" className="hover:text-emerald-600">
                       Job Seeker Login
                     </Link>
-                    <span className="hidden sm:inline">•</span>
-                    <Link
-                      href="/forgot-password"
-                      className="hover:text-emerald-600"
-                    >
-                      Forgot Password?
-                    </Link>
                   </div>
                 </div>
               </CardContent>

@@ -286,13 +286,6 @@ export default function LoginPage() {
                     <Link href="/login/company" className="hover:text-blue-600">
                       Company Login
                     </Link>
-                    <span className="hidden sm:inline">•</span>
-                    <Link
-                      href="/forgot-password"
-                      className="hover:text-blue-600"
-                    >
-                      Forgot Password?
-                    </Link>
                   </div>
                 </div>
               </CardContent>
