@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Users,
   Building2,
@@ -25,6 +24,7 @@ import {
 } from "lucide-react";
 
 export default function Home() {
+  const currentYear = new Date().getFullYear();
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Navigation Header */}
@@ -48,12 +48,6 @@ export default function Home() {
               >
                 How it Works
               </Link>
-              <Link
-                href="#stats"
-                className="text-gray-600 hover:text-blue-600 transition-colors"
-              >
-                Statistics
-              </Link>
             </div>
           </div>
         </div>
@@ -62,13 +56,6 @@ export default function Home() {
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20">
         <div className="text-center space-y-8 max-w-4xl mx-auto">
-          <Badge
-            variant="outline"
-            className="bg-blue-50 text-blue-700 border-blue-200 px-4 py-2"
-          >
-            🚀 Connecting Talent with Opportunity
-          </Badge>
-
           <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
             Find Your Dream Job or Perfect Candidate
           </h1>
@@ -108,7 +95,7 @@ export default function Home() {
             Choose Your Path
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Whether you're looking for talent, seeking opportunities, or
+            Whether you&apos;re looking for talent, seeking opportunities, or
             managing the platform, we have the perfect solution for you.
           </p>
         </div>
@@ -396,7 +383,7 @@ export default function Home() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg font-semibold"
+                className="bg-purple-600 text-white hover:bg-purple-700 hover:text-white px-8 py-4 text-lg font-semibold"
               >
                 Post Your First Job
               </Button>
@@ -504,8 +491,8 @@ export default function Home() {
 
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
             <p>
-              &copy; 2024 JobBoard. All rights reserved. Built with ❤️ for
-              connecting talent and opportunity.
+              &copy; {currentYear} JobBoard. All rights reserved. Built with ❤️
+              for connecting talent and opportunity.
             </p>
           </div>
         </div>
